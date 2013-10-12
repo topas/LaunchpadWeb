@@ -2,9 +2,10 @@ module.exports = function (grunt) {
 
     // load the task 
     grunt.loadNpmTasks("grunt-ts");
+	grunt.loadNpmTasks('grunt-contrib-connect');
 
     // Configure grunt here
-    grunt.registerTask("default", ["ts:dev"]);
+    grunt.registerTask("default", ["connect", "ts:dev"]);
 
     grunt.initConfig({
 
@@ -23,7 +24,17 @@ module.exports = function (grunt) {
 		            comments: false           // true | false (default)
 		        },
 		    }
+		},
+
+		connect: {
+			server: {
+				options: {
+					port: 8080,
+					base: './src'
+				}
+			}
 		}
+
 
     });
 }

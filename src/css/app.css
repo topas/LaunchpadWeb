@@ -1,0 +1,42 @@
+.board .row {
+	margin-bottom: 10px;
+}
+
+button.Waiting {
+	animation-direction: normal;
+    animation-duration: 0.25s;
+    animation-iteration-count: infinite;
+    animation-name: waiting-blink;
+    animation-timing-function: ease;   
+
+	-webkit-animation-direction: normal;
+    -webkit-animation-duration: 0.25s;
+    -webkit-animation-iteration-count: infinite;
+    -webkit-animation-name: waiting-blink;
+    -webkit-animation-timing-function: ease;   
+}
+
+@keyframes 'waiting-blink' {
+    0% { background: rgba(0,0,0,0); }
+    50% { background: orange; }
+    100% { background: rgba(0,0,0,0); }
+}
+
+@-webkit-keyframes 'waiting-blink' {
+    0% { background: rgba(0,0,0,0); }
+    50% { background: orange; }
+    100% { background: rgba(0,0,0,0); }
+}
+
+button.Playing {
+	background-color: orange;
+}
+
+button.SampleLoaded {
+	background-color: green;
+}
+
+button.Disabled {
+	background-color: gray;
+}
+

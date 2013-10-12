@@ -8,21 +8,19 @@
     		cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non
     		proident, sunt in culpa qui officia deserunt mollit anim id est laborum. {{model}}
     	</div>
-    	<div class="col-md-8">
+    	<div class="col-md-8 board" ng-controller="Launchpad.PlayCtrl">
 
-    	<div class="row">
-	        <div class="col-md-1 col-md-offset-1"><button class="btn"><span class="glyphicon glyphicon-play"></span></button></div>
-	        <div class="col-md-1"><button class="btn"><span class="glyphicon glyphicon-play"></span></button></div>
-	        <div class="col-md-1"><button class="btn"><span class="glyphicon glyphicon-play"></span></button></div>
-	        <div class="col-md-1"><button class="btn"><span class="glyphicon glyphicon-play"></span></button></div>
-	        <div class="col-md-1"><button class="btn"><span class="glyphicon glyphicon-play"></span></button></div>
-	        <div class="col-md-1"><button class="btn"><span class="glyphicon glyphicon-play"></span></button></div>
-	        <div class="col-md-1"><button class="btn"><span class="glyphicon glyphicon-play"></span></button></div>
-	        <div class="col-md-1"><button class="btn"><span class="glyphicon glyphicon-play"></span></button></div>
-        <div class="col-md-2 col-md-offset-1"><button class="btn"><span class="glyphicon glyphicon-play"></span></button></div>
+           <div class="row" ng-repeat="row in board.buttonRows">
+            <div ng-class="['col-md-1', button.state]" ng-repeat="button in row.buttons">
+                <button ng-class="['btn', button.state]" ng-click="button.click()"><span class="glyphicon glyphicon-play"></span></button>
+            </div>
 
-      </div> 
+            <div class="col-md-2 col-md-offset-1">
+                <button  ng-class="['btn', row.state]" ng-click="row.click()"><span class="glyphicon glyphicon-play"></span></button>
+            </div>
 
-    	</div>
+        </div> 
+
+    </div>
 
     </div>
