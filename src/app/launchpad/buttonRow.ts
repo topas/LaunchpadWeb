@@ -1,13 +1,19 @@
 module Launchpad {
 	export class ButtonRow {
-		public buttons: Button[];
-		public state: ButtonState;
+		buttons: Button[];
+		state: ButtonState;
+		sampleManager: ISampleManager;
+		playSynchronizer: IPlaySynchronizer;
 
-		constructor(rowIndex: number) {
-			this.state = ButtonState.Waiting;
+		constructor(rowIndex: number, sampleManager: ISampleManager, playSynchronizer: IPlaySynchronizer) {
+			this.state = ButtonState.Disabled;
 			this.buttons = [];
+			this.sampleManager = sampleManager;
+			this.playSynchronizer = playSynchronizer;
+
 			for(var column = 0; column < 8; column++) {
-				this.buttons.push(new Button(rowIndex, column));
+				var sample = this.sampleManager.get(rowIndex, column);
+				this.buttons.push(new Button(rowIndex, column, sample, playSynchronizer));
 			}
 			
 		}
