@@ -1,12 +1,12 @@
 module Launchpad {
 	export class Sample {
 		private onStateChanged = new LiteEvent<SampleState>(); 
-		private instance: createjs.SoundInstance;
+		private instance: ISoundJsInstanceWrapper;
 		private type: SampleType;
 
 		src: string;
 		state: SampleState;
-		public get sampleChanged(): ILiteEvent<SampleState> { return this.onStateChanged; }
+		sampleChanged(): ILiteEvent<SampleState> { return this.onStateChanged; }
 
 		constructor(src: string, type: SampleType) {
 			this.src = src;			
@@ -14,17 +14,21 @@ module Launchpad {
 			this.state = SampleState.None;
 		}
 
-		setSoundInstance(instance: createjs.SoundInstance) {
+		setSoundInstance(instance: ISoundJsInstanceWrapper) {
 			this.instance = instance;
 			this.setState(SampleState.Loaded);
 
-			this.instance.addEventListener("complete", createjs.proxy(this.sampleCompleted, this));
+			this.instance.completed().on(() => this.sampleCompleted());
 		}
 
 		play() { 
-			var loop = (this.type == SampleType.Loop ? -1 : 0);
-			// interrupt?: string, delay?: number, offset?: number, loop?: number, volume?: number, pan?: number
-			this.instance.play(null, null, null, loop, null, null);
+			if (this.type == SampleType.Loop) {
+				this.instance.loop();
+			}
+			else {
+				this.instance.play();
+			}
+			
 			this.setState(SampleState.Playing);
 		}
 

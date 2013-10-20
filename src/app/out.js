@@ -33,7 +33,7 @@ var Launchpad;
             this.playSynchronizer = playSynchronizer;
 
             if (this.sample != undefined) {
-                this.sample.sampleChanged.on(function (state) {
+                this.sample.sampleChanged().on(function (state) {
                     return _this.sampleStateChanged(state);
                 });
             }
@@ -104,8 +104,10 @@ var Launchpad;
 var Launchpad;
 (function (Launchpad) {
     var LaunchpadBoard = (function () {
-        function LaunchpadBoard(timeoutService) {
-            var mgr = new Launchpad.SampleManager("./sounds/");
+        function LaunchpadBoard(timeoutService, progressCallback) {
+            var soundJsWrapper = new Launchpad.SoundJsWrapper();
+            var mgr = new Launchpad.SampleManager(soundJsWrapper, "./sounds/");
+            mgr.progressCallback = progressCallback;
 
             mgr.add(0, 0, "skipyofficialmusic-drums1.wav", Launchpad.SampleType.Loop);
             mgr.add(0, 1, "skyhunter-dubstep-dirty-wobble-bass.wav", Launchpad.SampleType.Loop);
@@ -114,7 +116,7 @@ var Launchpad;
             mgr.add(1, 3, "skipyofficialmusic-heavy-dubstep-sytnth.wav", Launchpad.SampleType.Loop);
             mgr.add(1, 4, "skipyofficialmusic-heavy-dubstep-wobble.wav", Launchpad.SampleType.Loop);
 
-            mgr.add(2, 1, "skipyofficialmusic-jump-up-synth.wav", Launchpad.SampleType.Loop);
+            mgr.add(2, 1, "skipyofficialmusic-jump-up-synth.wav", Launchpad.SampleType.SinglePlay);
             mgr.add(2, 2, "skipyofficialmusic-skrillex-summit-lead.wav", Launchpad.SampleType.Loop);
 
             var playSynchronizer = new Launchpad.PlaySynchronizer(140, timeoutService);
@@ -176,25 +178,27 @@ var Launchpad;
             this.type = type;
             this.state = Launchpad.SampleState.None;
         }
-        Object.defineProperty(Sample.prototype, "sampleChanged", {
-            get: function () {
-                return this.onStateChanged;
-            },
-            enumerable: true,
-            configurable: true
-        });
+        Sample.prototype.sampleChanged = function () {
+            return this.onStateChanged;
+        };
 
         Sample.prototype.setSoundInstance = function (instance) {
+            var _this = this;
             this.instance = instance;
             this.setState(Launchpad.SampleState.Loaded);
 
-            this.instance.addEventListener("complete", createjs.proxy(this.sampleCompleted, this));
+            this.instance.completed().on(function () {
+                return _this.sampleCompleted();
+            });
         };
 
         Sample.prototype.play = function () {
-            var loop = (this.type == Launchpad.SampleType.Loop ? -1 : 0);
+            if (this.type == Launchpad.SampleType.Loop) {
+                this.instance.loop();
+            } else {
+                this.instance.play();
+            }
 
-            this.instance.play(null, null, null, loop, null, null);
             this.setState(Launchpad.SampleState.Playing);
         };
 
@@ -220,13 +224,19 @@ var Launchpad;
 var Launchpad;
 (function (Launchpad) {
     var SampleManager = (function () {
-        function SampleManager(basePath) {
+        function SampleManager(soundJsWrapper, basePath) {
+            var _this = this;
             this.basePath = basePath;
+            this.soundJsWrapper = soundJsWrapper;
 
             this.samples = new Array(8);
             for (var i = 0; i < 8; i++) {
                 this.samples[i] = new Array(8);
             }
+
+            this.soundJsWrapper.setSoundLoadedCallback(function (src) {
+                return _this.soundLoadedHandler(src);
+            });
         }
         SampleManager.prototype.add = function (row, column, filename, type) {
             this.samples[row][column] = new Launchpad.Sample(filename, type);
@@ -237,29 +247,40 @@ var Launchpad;
         };
 
         SampleManager.prototype.loadSamples = function () {
-            createjs.Sound.addEventListener("fileload", createjs.proxy(this.loadHandlerProxy, this));
+            var _this = this;
+            var loadSounds = [];
+            this.samplesCount = 0;
+            this.samplesLoaded = 0;
+            this.forEachSample(function (sample) {
+                loadSounds.push(sample.src);
+                _this.samplesCount++;
+            });
 
-            var manifest = [];
-            var id = 0;
-            for (var row = 0; row < 8; row++) {
-                for (var column = 0; column < 8; column++) {
-                    var sample = this.samples[row][column];
-                    if (sample != undefined) {
-                        manifest.push({ src: sample.src, id: id++ });
-                    }
-                }
-            }
-
-            createjs.Sound.registerManifest(manifest, this.basePath);
+            this.soundJsWrapper.loadSounds(loadSounds, this.basePath);
         };
 
-        SampleManager.prototype.loadHandlerProxy = function () {
+        SampleManager.prototype.soundLoadedHandler = function (src) {
+            var _this = this;
+            this.forEachSample(function (sample) {
+                if (sample.src != src) {
+                    return;
+                }
+
+                var instance = _this.soundJsWrapper.createSoundInstance(src);
+                sample.setSoundInstance(instance);
+                _this.samplesLoaded++;
+                if (_this.progressCallback != undefined) {
+                    _this.progressCallback(_this.samplesCount, _this.samplesLoaded);
+                }
+            });
+        };
+
+        SampleManager.prototype.forEachSample = function (callback) {
             for (var row = 0; row < 8; row++) {
                 for (var column = 0; column < 8; column++) {
                     var sample = this.samples[row][column];
                     if (sample != undefined) {
-                        var instance = createjs.Sound.createInstance(sample.src);
-                        sample.setSoundInstance(instance);
+                        callback(sample);
                     }
                 }
             }
@@ -288,16 +309,97 @@ var Launchpad;
 })(Launchpad || (Launchpad = {}));
 var Launchpad;
 (function (Launchpad) {
+    var SoundJsInstanceWrapper = (function () {
+        function SoundJsInstanceWrapper(src) {
+            this.onCompleted = new LiteEvent();
+            this.instance = createjs.Sound.createInstance(src);
+            this.instance.addEventListener("complete", createjs.proxy(this.completedHandler, this));
+        }
+        SoundJsInstanceWrapper.prototype.completed = function () {
+            return this.onCompleted;
+        };
+
+        SoundJsInstanceWrapper.prototype.play = function () {
+            this.instance.play();
+        };
+
+        SoundJsInstanceWrapper.prototype.loop = function () {
+            this.instance.play(null, null, null, -1, null, null);
+        };
+
+        SoundJsInstanceWrapper.prototype.stop = function () {
+            this.instance.stop();
+        };
+
+        SoundJsInstanceWrapper.prototype.completedHandler = function () {
+            this.onCompleted.trigger();
+        };
+        return SoundJsInstanceWrapper;
+    })();
+    Launchpad.SoundJsInstanceWrapper = SoundJsInstanceWrapper;
+
+    var LoadCallback = (function () {
+        function LoadCallback(callback, context) {
+            this.callback = callback;
+            this.context = context;
+        }
+        return LoadCallback;
+    })();
+    Launchpad.LoadCallback = LoadCallback;
+
+    var SoundJsWrapper = (function () {
+        function SoundJsWrapper() {
+        }
+        SoundJsWrapper.prototype.setSoundLoadedCallback = function (callback) {
+            this.soundLoadedCallback = callback;
+        };
+
+        SoundJsWrapper.prototype.loadSounds = function (items, basePath) {
+            createjs.Sound.addEventListener("fileload", createjs.proxy(this.fileLoaded, this));
+            var manifest = [];
+            for (var i in items) {
+                var src = items[i];
+                manifest.push({ src: src, id: i, preload: true });
+            }
+
+            createjs.Sound.registerManifest(manifest, basePath);
+        };
+
+        SoundJsWrapper.prototype.createSoundInstance = function (src) {
+            return new SoundJsInstanceWrapper(src);
+        };
+
+        SoundJsWrapper.prototype.fileLoaded = function (evt) {
+            if (this.soundLoadedCallback != undefined) {
+                this.soundLoadedCallback(evt.src);
+            }
+        };
+        return SoundJsWrapper;
+    })();
+    Launchpad.SoundJsWrapper = SoundJsWrapper;
+})(Launchpad || (Launchpad = {}));
+var Launchpad;
+(function (Launchpad) {
     var PlayCtrl = (function () {
         function PlayCtrl($scope, $timeout) {
             var _this = this;
-            $scope.board = new Launchpad.LaunchpadBoard($timeout);
+            $scope.progress = 0;
+
+            $scope.board = new Launchpad.LaunchpadBoard($timeout, function (total, loaded) {
+                _this.updateProgress($scope, total, loaded);
+            });
             $scope.isButtonPlaying = function (button) {
                 return _this.isButtonPlaying(button);
             };
         }
         PlayCtrl.prototype.isButtonPlaying = function (button) {
             return button.state == Launchpad.ButtonState.Playing || button.state == Launchpad.ButtonState.Waiting;
+        };
+
+        PlayCtrl.prototype.updateProgress = function ($scope, total, loaded) {
+            $scope.$apply(function () {
+                $scope.progress = (loaded / total) * 100;
+            });
         };
         return PlayCtrl;
     })();

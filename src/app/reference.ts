@@ -10,6 +10,7 @@
 /// <reference path="launchpad/sampleManager.ts" />
 /// <reference path="launchpad/sampleState.ts" />
 /// <reference path="launchpad/sampleType.ts" />
+/// <reference path="launchpad/soundJsWrapper.ts" />
 /// <reference path="vendors.d.ts" />
 //grunt-end
 

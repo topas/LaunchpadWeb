@@ -16,7 +16,7 @@ module Launchpad {
 
 			if (this.sample != undefined)
 			{
-				this.sample.sampleChanged.on((state?: SampleState) => this.sampleStateChanged(state));
+				this.sample.sampleChanged().on((state?: SampleState) => this.sampleStateChanged(state));
 			}
 		}
 

@@ -3,8 +3,19 @@
     		Web version of novation launchpad
     	</div>
     	<div class="col-md-8 board" ng-controller="Launchpad.PlayCtrl">
+        
+        <div class="row">
+            <div class="col-md-8">        
+                <div class="progress" ng-hide="progress == 100">
+                    <div class="progress-bar progress-bar-info" role="progressbar" aria-valuenow="{{progress}}" 
+                         aria-valuemin="0" aria-valuemax="100" style="width: {{progress}}%">
+                        <span class="sr-only">{{progress}}% Complete</span>
+                    </div>
+                </div>
+            </div>
+        </div>      
 
-           <div class="row" ng-repeat="row in board.buttonRows">
+         <div class="row" ng-repeat="row in board.buttonRows">
             <div ng-class="['col-md-1', button.state]" ng-repeat="button in row.buttons">
                 <button ng-class="['btn', button.state]" ng-click="button.click()">
                     <span class="glyphicon" ng-class="{ 'glyphicon-stop': isButtonPlaying(button), 'glyphicon-play' : !isButtonPlaying(button) }"></span>
@@ -19,4 +30,4 @@
 
     </div>
 
-    </div>
+</div>

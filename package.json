@@ -3,7 +3,10 @@
   "version": "0.0.1",
   "devDependencies": {
     "grunt": "~0.4.1",
-    "grunt-ts" : "latest",
-    "grunt-contrib-connect": "latest"
+    "grunt-ts" : "*",
+    "grunt-contrib-connect": "*",
+    "chai": "*",
+    "mocha": "*",
+    "grunt-mocha-test": "*" 
   }
 }
