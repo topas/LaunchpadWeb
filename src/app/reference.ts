@@ -1,6 +1,8 @@
 //grunt-start
 /// <reference path="common/liteEvent.ts" />
 /// <reference path="launchpad/button.ts" />
+/// <reference path="launchpad/buttonBoard.ts" />
+/// <reference path="launchpad/buttonColumn.ts" />
 /// <reference path="launchpad/buttonRow.ts" />
 /// <reference path="launchpad/buttonState.ts" />
 /// <reference path="launchpad/launchpadBoard.ts" />

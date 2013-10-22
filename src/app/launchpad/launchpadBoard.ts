@@ -1,6 +1,6 @@
 module Launchpad {
 	export class LaunchpadBoard {
-		buttonRows: ButtonRow[];
+		buttons: ButtonBoard;
 		
 		constructor(timeoutService: ng.ITimeoutService, progressCallback: (total: number, loaded: number) => any) {
 
@@ -12,7 +12,6 @@ module Launchpad {
 			mgr.add(0, 1, "skyhunter-dubstep-dirty-wobble-bass.wav", SampleType.Loop);
 			
 
-
 			mgr.add(1, 2, "skipyofficialmusic-dark-dubstep-loop.wav", SampleType.Loop);
 			mgr.add(1, 3, "skipyofficialmusic-heavy-dubstep-sytnth.wav", SampleType.Loop);
 			mgr.add(1, 4, "skipyofficialmusic-heavy-dubstep-wobble.wav", SampleType.Loop);
@@ -22,10 +21,7 @@ module Launchpad {
 
 			var playSynchronizer = new PlaySynchronizer(140, timeoutService);
 
-			this.buttonRows = [];
-			for(var row = 0; row < 8; row++) {
-				this.buttonRows.push(new ButtonRow(row, mgr, playSynchronizer));
-			}
+			this.buttons = new ButtonBoard(mgr, playSynchronizer);
 
 			mgr.loadSamples();
 

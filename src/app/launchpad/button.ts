@@ -1,13 +1,13 @@
 module Launchpad {
 	export class Button {
-		private row: number;
-		private column: number;
+		private row: ButtonRow;
+		private column: ButtonColumn;
 		private sample: Sample;
 		private playSynchronizer: IPlaySynchronizer;
 
 		state: ButtonState;
 
-		constructor(row: number, column: number, sample: Sample, playSynchronizer: IPlaySynchronizer) {
+		constructor(row: ButtonRow, column: ButtonColumn, sample: Sample, playSynchronizer: IPlaySynchronizer) {
 			this.row = row;
 			this.column = column;
 			this.state = ButtonState.Disabled;

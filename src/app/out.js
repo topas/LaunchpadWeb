@@ -70,22 +70,56 @@ var Launchpad;
 })(Launchpad || (Launchpad = {}));
 var Launchpad;
 (function (Launchpad) {
+    var ButtonBoard = (function () {
+        function ButtonBoard(sampleManager, playSynchronizer) {
+            this.columns = [];
+            for (var column = 0; column < 8; column++) {
+                this.columns.push(new Launchpad.ButtonColumn(column));
+            }
+
+            this.rows = [];
+            for (var row = 0; row < 8; row++) {
+                this.rows.push(new Launchpad.ButtonRow(row, this.columns, sampleManager, playSynchronizer));
+            }
+        }
+        return ButtonBoard;
+    })();
+    Launchpad.ButtonBoard = ButtonBoard;
+})(Launchpad || (Launchpad = {}));
+var Launchpad;
+(function (Launchpad) {
+    var ButtonColumn = (function () {
+        function ButtonColumn(columnIndex) {
+            this.index = columnIndex;
+            this.buttons = [];
+        }
+        ButtonColumn.prototype.addButton = function (button) {
+            this.buttons.push(button);
+        };
+        return ButtonColumn;
+    })();
+    Launchpad.ButtonColumn = ButtonColumn;
+})(Launchpad || (Launchpad = {}));
+var Launchpad;
+(function (Launchpad) {
     var ButtonRow = (function () {
-        function ButtonRow(rowIndex, sampleManager, playSynchronizer) {
+        function ButtonRow(rowIndex, columns, sampleManager, playSynchronizer) {
+            this.index = rowIndex;
             this.state = Launchpad.ButtonState.Disabled;
             this.buttons = [];
             this.sampleManager = sampleManager;
             this.playSynchronizer = playSynchronizer;
 
-            for (var column = 0; column < 8; column++) {
-                var sample = this.sampleManager.get(rowIndex, column);
-                this.buttons.push(new Launchpad.Button(rowIndex, column, sample, playSynchronizer));
+            for (var columnIndex = 0; columnIndex < 8; columnIndex++) {
+                var sample = this.sampleManager.get(rowIndex, columnIndex);
+                var column = columns[columnIndex];
+                var button = new Launchpad.Button(this, column, sample, playSynchronizer);
+                column.addButton(button);
+                this.addButton(button);
             }
         }
-        ButtonRow.prototype.click = function () {
-            for (var button in this.buttons) {
-                button.play();
-            }
+        ButtonRow.prototype.addButton = function (button) {
+            this.buttons.push(button);
         };
         return ButtonRow;
     })();
@@ -121,10 +155,7 @@ var Launchpad;
 
             var playSynchronizer = new Launchpad.PlaySynchronizer(140, timeoutService);
 
-            this.buttonRows = [];
-            for (var row = 0; row < 8; row++) {
-                this.buttonRows.push(new Launchpad.ButtonRow(row, mgr, playSynchronizer));
-            }
+            this.buttons = new Launchpad.ButtonBoard(mgr, playSynchronizer);
 
             mgr.loadSamples();
         }
