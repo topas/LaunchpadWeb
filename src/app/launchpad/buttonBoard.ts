@@ -4,7 +4,7 @@ module Launchpad {
 		rows: ButtonRow[];
 		columns: ButtonColumn[];
 
-		constructor(sampleManager: ISampleManager, playSynchronizer: IPlaySynchronizer) {
+		constructor(sampleManager: ISampleManager) {
 
 			this.columns = [];
 			for(var column = 0; column < 8; column++) {
@@ -13,7 +13,7 @@ module Launchpad {
 
 			this.rows = [];
 			for(var row = 0; row < 8; row++) {
-				this.rows.push(new ButtonRow(row, this.columns, sampleManager, playSynchronizer));
+				this.rows.push(new ButtonRow(row, this.columns, sampleManager));
 			}			
 		}
 

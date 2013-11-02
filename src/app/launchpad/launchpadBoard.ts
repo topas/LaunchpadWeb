@@ -5,7 +5,8 @@ module Launchpad {
 		constructor(timeoutService: ng.ITimeoutService, progressCallback: (total: number, loaded: number) => any) {
 
 			var soundJsWrapper = new SoundJsWrapper();			
-			var mgr = new SampleManager(soundJsWrapper, "./sounds/");
+			var tempoSynchronizer = new TempoSynchronizer(140, timeoutService);
+			var mgr = new SampleManager(soundJsWrapper, "./sounds/", tempoSynchronizer);
 			mgr.progressCallback = progressCallback;
 
 			mgr.add(0, 0, "skipyofficialmusic-drums1.wav", SampleType.Loop);
@@ -19,9 +20,7 @@ module Launchpad {
 			mgr.add(2, 1, "skipyofficialmusic-jump-up-synth.wav", SampleType.SinglePlay);
 			mgr.add(2, 2, "skipyofficialmusic-skrillex-summit-lead.wav", SampleType.Loop);
 
-			var playSynchronizer = new PlaySynchronizer(140, timeoutService);
-
-			this.buttons = new ButtonBoard(mgr, playSynchronizer);
+			this.buttons = new ButtonBoard(mgr);
 
 			mgr.loadSamples();
 

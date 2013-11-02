@@ -4,23 +4,25 @@ module Launchpad {
 		progressCallback: (total: number, loaded: number) => any;
 
 		add(row: number, column: number, filename: string, type: SampleType);
-		get(row: number, column: number): Sample;
+		get(row: number, column: number): ISample;
 		
 		loadSamples();
 	}
 
 	export class SampleManager implements ISampleManager {
-		private samples:Sample[][];
+		private samples:ISample[][];
 		private basePath: string;
 		private soundJsWrapper: ISoundJsWrapper;
 		private samplesCount: number;
 		private samplesLoaded: number;
+		private tempoSynchronizer: ITempoSynchronizer;
 		
 		progressCallback: (total: number, loaded: number) => any;
 
-		constructor(soundJsWrapper: ISoundJsWrapper, basePath: string) {				
+		constructor(soundJsWrapper: ISoundJsWrapper, basePath: string, tempoSynchronizer: ITempoSynchronizer) {				
 			this.basePath = basePath;
 			this.soundJsWrapper = soundJsWrapper;
+			this.tempoSynchronizer = tempoSynchronizer;
 
 			this.samples = new Array(8);
   			for (var i = 0; i < 8; i++) {
@@ -31,10 +33,14 @@ module Launchpad {
 		}
 
 		add(row: number, column: number, filename: string, type: SampleType) {
-			this.samples[row][column] = new Sample(filename, type);	
+
+			var sample = new Sample(filename, type);
+			var synchronizedSample = new SynchronizedSample(sample, this.tempoSynchronizer);
+
+			this.samples[row][column] = synchronizedSample;	
 		}
 
-		get(row: number, column: number): Sample {
+		get(row: number, column: number): ISample {
 			return this.samples[row][column];
 		}
 
@@ -44,7 +50,7 @@ module Launchpad {
 			this.samplesCount = 0;
 			this.samplesLoaded = 0;
 			this.forEachSample((sample: Sample) => {								
-				loadSounds.push(sample.src);				
+				loadSounds.push(sample.src());				
 				this.samplesCount++;				
 			});
 
@@ -54,7 +60,7 @@ module Launchpad {
 		private soundLoadedHandler(src: string) {
 						
 			this.forEachSample((sample: Sample) => {							
-				if (sample.src != src) {
+				if (sample.src() != src) {
 					return;
 				}
 
@@ -68,7 +74,7 @@ module Launchpad {
 			});						
 		}
 
-		private forEachSample(callback: (s: Sample) => any) {
+		private forEachSample(callback: (s: ISample) => any) {
 			for (var row = 0; row < 8; row++) {
 				for (var column = 0; column < 8; column++) {
 					var sample = this.samples[row][column];

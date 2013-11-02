@@ -2,17 +2,15 @@ module Launchpad {
 	export class Button {
 		private row: ButtonRow;
 		private column: ButtonColumn;
-		private sample: Sample;
-		private playSynchronizer: IPlaySynchronizer;
+		private sample: ISample;		
 
 		state: ButtonState;
 
-		constructor(row: ButtonRow, column: ButtonColumn, sample: Sample, playSynchronizer: IPlaySynchronizer) {
+		constructor(row: ButtonRow, column: ButtonColumn, sample: ISample) {
 			this.row = row;
 			this.column = column;
 			this.state = ButtonState.Disabled;
-			this.sample = sample;
-			this.playSynchronizer = playSynchronizer;
+			this.sample = sample;			
 
 			if (this.sample != undefined)
 			{
@@ -25,16 +23,17 @@ module Launchpad {
 				return;
 			}
 
-			if (this.sample.state == SampleState.Playing) {
+			if (this.sample.state == SampleState.Playing || 
+				this.sample.state == SampleState.Waiting) {
 				this.sample.stop();
 			}
 			else {
-				this.playSynchronizer.play(this.sample);
-				this.state = ButtonState.Waiting;
+				this.sample.play();				
 			}
 		}
 
 		private sampleStateChanged(state: SampleState) {
+			
 			if (state == SampleState.Loaded) {
 				this.state = ButtonState.SampleLoaded;
 			}
@@ -43,8 +42,12 @@ module Launchpad {
 				this.state = ButtonState.Playing;
 			}
 
-			if (state == SampleState.Stopped) {
+			if (state == SampleState.Stopped) {				
 				this.state = ButtonState.SampleLoaded;
+			}
+
+			if (state == SampleState.Waiting) {
+				this.state = ButtonState.Waiting;	
 			}
 		}
 	}

@@ -1,14 +1,15 @@
 module Launchpad {
 
-	export interface IPlaySynchronizer {
-		play(sample: Sample);
+	export interface ITempoSynchronizer {
+		play(sample: ISample);
+		stop(sample: ISample);
 	}
 
-	export class PlaySynchronizer implements IPlaySynchronizer {
+	export class TempoSynchronizer implements ITempoSynchronizer {
 
 		private timeoutService: ng.ITimeoutService;
 		private tempoDelay: number;
-		private sampleQueue: Sample[];
+		private sampleQueue: ISample[];
 
 		constructor(bpm: number, timeoutService: ng.ITimeoutService) {
 			this.timeoutService = timeoutService;
@@ -18,8 +19,14 @@ module Launchpad {
 			this.setProcessInterval();
 		}
 
-		play(sample: Sample) {
+		play(sample: ISample) {
 			this.sampleQueue.push(sample);			
+		}
+
+		stop(sample: ISample) {
+			var index =  this.sampleQueue.indexOf(sample);
+			this.sampleQueue.splice(index, 1);			
+			sample.stop();
 		}
 
 		private processSampleQueue() {

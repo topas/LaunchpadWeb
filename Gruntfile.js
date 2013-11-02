@@ -20,7 +20,7 @@ module.exports = function (grunt) {
 		        watch: "src/app",                     // If specified, watches this directory for changes, and re-runs the current target  
 		        options: {                    // use to override the default options, http://gruntjs.com/configuring-tasks#options
 		            target: "es5",            // 'es3' (default) | 'es5'
-		            module: "commonjs",       // 'amd' (default) | 'commonjs'
+		            module: "amd",       // 'amd' (default) | 'commonjs'
 		            sourcemap: true,          // true  (default) | false
 		            declaration: false,       // true | false  (default)                
 		            comments: false           // true | false (default)
@@ -28,16 +28,17 @@ module.exports = function (grunt) {
 		    },
 		    test: {
 		    	 src: ["src/app/test/**/*.ts"],
+		    	 out: "artefacts/test.js",
 		    	 reference: "./src/app/test/reference.ts",  
 		    	 options: {
-		    	 	module: "commonjs"
+		    	 	module: "amd"
 		    	 }
 		    }
 		},
 
 		mochaTest: {
 			test: {
-				src: ["src/app/test//**/*.js"],				
+				src: ["artefacts/**/*.js"],				
 				options: {
 					ui: "tdd",
 					reporter: "spec"
