@@ -14,12 +14,11 @@ module Launchpad {
 			mgr.add(0, 1, "skyhunter-dubstep-dirty-wobble-bass.wav", SampleType.Loop);
 			
 
-			mgr.add(1, 2, "skipyofficialmusic-dark-dubstep-loop.wav", SampleType.Loop);
+			mgr.add(0, 3, "skipyofficialmusic-dark-dubstep-loop.wav", SampleType.Loop);
 			mgr.add(1, 3, "skipyofficialmusic-heavy-dubstep-sytnth.wav", SampleType.Loop);
 			mgr.add(1, 4, "skipyofficialmusic-heavy-dubstep-wobble.wav", SampleType.Loop);
 
-			mgr.add(2, 1, "skipyofficialmusic-jump-up-synth.wav", SampleType.SinglePlay);
-			mgr.add(2, 2, "skipyofficialmusic-skrillex-summit-lead.wav", SampleType.Loop);
+			mgr.add(2, 1, "skipyofficialmusic-skrillex-summit-lead.wav", SampleType.Loop);
 
 			this.buttons = new ButtonBoard(mgr, samplePlaySynchronizer);
 
