@@ -5,7 +5,7 @@ var Launchpad;
             this.onStateChanged = new LiteEvent();
             this.state = Launchpad.SampleState.None;
         }
-        SampleBase.prototype.sampleChanged = function () {
+        SampleBase.prototype.stateChanged = function () {
             return this.onStateChanged;
         };
 
@@ -24,7 +24,7 @@ var Launchpad;
 
         SampleBase.prototype.setState = function (state) {
             this.state = state;
-            this.onStateChanged.trigger(state);
+            this.onStateChanged.trigger(this, state);
         };
         return SampleBase;
     })();
@@ -44,10 +44,10 @@ var LiteEvent = (function () {
         });
     };
 
-    LiteEvent.prototype.trigger = function (data) {
+    LiteEvent.prototype.trigger = function (sender, data) {
         if (this.handlers) {
             this.handlers.forEach(function (h) {
-                return h(data);
+                return h(sender, data);
             });
         }
     };
@@ -64,21 +64,18 @@ var Launchpad;
             this.sample = sample;
 
             if (this.sample != undefined) {
-                this.sample.sampleChanged().on(function (state) {
+                this.sample.stateChanged().on(function (sample, state) {
                     return _this.sampleStateChanged(state);
                 });
             }
         }
         Button.prototype.click = function () {
             if (this.sample == undefined) {
+                this.column.stop();
                 return;
             }
 
-            if (this.sample.state == Launchpad.SampleState.Playing || this.sample.state == Launchpad.SampleState.Waiting) {
-                this.sample.stop();
-            } else {
-                this.sample.play();
-            }
+            this.sample.play();
         };
 
         Button.prototype.sampleStateChanged = function (state) {
@@ -105,15 +102,15 @@ var Launchpad;
 var Launchpad;
 (function (Launchpad) {
     var ButtonBoard = (function () {
-        function ButtonBoard(sampleManager) {
+        function ButtonBoard(sampleManager, samplePlaySynchronizer) {
             this.columns = [];
             for (var column = 0; column < 8; column++) {
-                this.columns.push(new Launchpad.ButtonColumn(column));
+                this.columns.push(new Launchpad.ButtonColumn(column, samplePlaySynchronizer.getColumn(column)));
             }
 
             this.rows = [];
             for (var row = 0; row < 8; row++) {
-                this.rows.push(new Launchpad.ButtonRow(row, this.columns, sampleManager));
+                this.rows.push(new Launchpad.ButtonRow(row, samplePlaySynchronizer.getRow(row), this.columns, sampleManager));
             }
         }
         return ButtonBoard;
@@ -123,12 +120,17 @@ var Launchpad;
 var Launchpad;
 (function (Launchpad) {
     var ButtonColumn = (function () {
-        function ButtonColumn(columnIndex) {
+        function ButtonColumn(columnIndex, sampleColumn) {
             this.index = columnIndex;
+            this.sampleColumn = sampleColumn;
             this.buttons = [];
         }
         ButtonColumn.prototype.addButton = function (button) {
             this.buttons.push(button);
+        };
+
+        ButtonColumn.prototype.stop = function () {
+            this.sampleColumn.stop();
         };
         return ButtonColumn;
     })();
@@ -137,11 +139,12 @@ var Launchpad;
 var Launchpad;
 (function (Launchpad) {
     var ButtonRow = (function () {
-        function ButtonRow(rowIndex, columns, sampleManager) {
+        function ButtonRow(rowIndex, sampleRow, columns, sampleManager) {
             this.index = rowIndex;
             this.state = Launchpad.ButtonState.Disabled;
             this.buttons = [];
             this.sampleManager = sampleManager;
+            this.sampleRow = sampleRow;
 
             for (var columnIndex = 0; columnIndex < 8; columnIndex++) {
                 var sample = this.sampleManager.get(rowIndex, columnIndex);
@@ -174,7 +177,8 @@ var Launchpad;
         function LaunchpadBoard(timeoutService, progressCallback) {
             var soundJsWrapper = new Launchpad.SoundJsWrapper();
             var tempoSynchronizer = new Launchpad.TempoSynchronizer(140, timeoutService);
-            var mgr = new Launchpad.SampleManager(soundJsWrapper, "./sounds/", tempoSynchronizer);
+            var samplePlaySynchronizer = new Launchpad.SamplePlaySynchronizer();
+            var mgr = new Launchpad.SampleManager(soundJsWrapper, "./sounds/", tempoSynchronizer, samplePlaySynchronizer);
             mgr.progressCallback = progressCallback;
 
             mgr.add(0, 0, "skipyofficialmusic-drums1.wav", Launchpad.SampleType.Loop);
@@ -187,7 +191,7 @@ var Launchpad;
             mgr.add(2, 1, "skipyofficialmusic-jump-up-synth.wav", Launchpad.SampleType.SinglePlay);
             mgr.add(2, 2, "skipyofficialmusic-skrillex-summit-lead.wav", Launchpad.SampleType.Loop);
 
-            this.buttons = new Launchpad.ButtonBoard(mgr);
+            this.buttons = new Launchpad.ButtonBoard(mgr, samplePlaySynchronizer);
 
             mgr.loadSamples();
         }
@@ -248,12 +252,48 @@ var Launchpad;
 })(Launchpad || (Launchpad = {}));
 var Launchpad;
 (function (Launchpad) {
+    var SampleColumn = (function () {
+        function SampleColumn(index) {
+            this.index = index;
+            this.samples = [];
+        }
+        SampleColumn.prototype.addSample = function (sample) {
+            var _this = this;
+            this.samples.push(sample);
+            sample.stateChanged().on(function (sample, state) {
+                return _this.sampleStateChanged(sample, state);
+            });
+        };
+
+        SampleColumn.prototype.stop = function () {
+            this.samples.forEach(function (s) {
+                return s.stop();
+            });
+        };
+
+        SampleColumn.prototype.sampleStateChanged = function (sample, state) {
+            if (state == Launchpad.SampleState.Playing) {
+                var otherSamples = this.samples.filter(function (s) {
+                    return s !== sample;
+                });
+                otherSamples.forEach(function (s) {
+                    return s.stop();
+                });
+            }
+        };
+        return SampleColumn;
+    })();
+    Launchpad.SampleColumn = SampleColumn;
+})(Launchpad || (Launchpad = {}));
+var Launchpad;
+(function (Launchpad) {
     var SampleManager = (function () {
-        function SampleManager(soundJsWrapper, basePath, tempoSynchronizer) {
+        function SampleManager(soundJsWrapper, basePath, tempoSynchronizer, samplePlaySynchronizer) {
             var _this = this;
             this.basePath = basePath;
             this.soundJsWrapper = soundJsWrapper;
             this.tempoSynchronizer = tempoSynchronizer;
+            this.samplePlaySynchronizer = samplePlaySynchronizer;
 
             this.samples = new Array(8);
             for (var i = 0; i < 8; i++) {
@@ -269,6 +309,7 @@ var Launchpad;
             var synchronizedSample = new Launchpad.SynchronizedSample(sample, this.tempoSynchronizer);
 
             this.samples[row][column] = synchronizedSample;
+            this.samplePlaySynchronizer.add(row, column, synchronizedSample);
         };
 
         SampleManager.prototype.get = function (row, column) {
@@ -320,6 +361,50 @@ var Launchpad;
 })(Launchpad || (Launchpad = {}));
 var Launchpad;
 (function (Launchpad) {
+    var SamplePlaySynchronizer = (function () {
+        function SamplePlaySynchronizer() {
+            this.columns = [];
+            for (var column = 0; column < 8; column++) {
+                this.columns.push(new Launchpad.SampleColumn(column));
+            }
+
+            this.rows = [];
+            for (var row = 0; row < 8; row++) {
+                this.rows.push(new Launchpad.SampleRow(row));
+            }
+        }
+        SamplePlaySynchronizer.prototype.add = function (row, column, sample) {
+            this.columns[column].addSample(sample);
+            this.rows[row].addSample(sample);
+        };
+
+        SamplePlaySynchronizer.prototype.getRow = function (index) {
+            return this.rows[index];
+        };
+
+        SamplePlaySynchronizer.prototype.getColumn = function (index) {
+            return this.columns[index];
+        };
+        return SamplePlaySynchronizer;
+    })();
+    Launchpad.SamplePlaySynchronizer = SamplePlaySynchronizer;
+})(Launchpad || (Launchpad = {}));
+var Launchpad;
+(function (Launchpad) {
+    var SampleRow = (function () {
+        function SampleRow(index) {
+            this.index = index;
+            this.samples = [];
+        }
+        SampleRow.prototype.addSample = function (sample) {
+            this.samples.push(sample);
+        };
+        return SampleRow;
+    })();
+    Launchpad.SampleRow = SampleRow;
+})(Launchpad || (Launchpad = {}));
+var Launchpad;
+(function (Launchpad) {
     (function (SampleState) {
         SampleState[SampleState["None"] = "None"] = "None";
         SampleState[SampleState["Loaded"] = "Loaded"] = "Loaded";
@@ -362,7 +447,7 @@ var Launchpad;
         };
 
         SoundJsInstanceWrapper.prototype.completedHandler = function () {
-            this.onCompleted.trigger();
+            this.onCompleted.trigger(this);
         };
         return SoundJsInstanceWrapper;
     })();
@@ -417,8 +502,8 @@ var Launchpad;
             _super.call(this);
             this.sample = sample;
             this.tempoSynchronizer = tempoSynchronizer;
-            this.sample.sampleChanged().on(function (state) {
-                return _this.internalSampleStateChanged(state);
+            this.sample.stateChanged().on(function (sample, state) {
+                return _this.internalSampleStateChanged(sample, state);
             });
         }
         SynchronizedSample.prototype.src = function () {
@@ -438,8 +523,7 @@ var Launchpad;
             this.tempoSynchronizer.stop(this.sample);
         };
 
-        SynchronizedSample.prototype.internalSampleStateChanged = function (state) {
-            console.debug("" + state);
+        SynchronizedSample.prototype.internalSampleStateChanged = function (sample, state) {
             this.setState(state);
         };
         return SynchronizedSample;
@@ -499,12 +583,12 @@ var Launchpad;
             $scope.board = new Launchpad.LaunchpadBoard($timeout, function (total, loaded) {
                 _this.updateProgress($scope, total, loaded);
             });
-            $scope.isButtonPlaying = function (button) {
-                return _this.isButtonPlaying(button);
+            $scope.isSampleLoaded = function (button) {
+                return _this.isSampleLoaded(button);
             };
         }
-        PlayCtrl.prototype.isButtonPlaying = function (button) {
-            return button.state == Launchpad.ButtonState.Playing || button.state == Launchpad.ButtonState.Waiting;
+        PlayCtrl.prototype.isSampleLoaded = function (button) {
+            return button.state == Launchpad.ButtonState.SampleLoaded || button.state == Launchpad.ButtonState.Playing || button.state == Launchpad.ButtonState.Waiting;
         };
 
         PlayCtrl.prototype.updateProgress = function ($scope, total, loaded) {

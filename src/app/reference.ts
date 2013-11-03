@@ -13,6 +13,7 @@
 /// <reference path="launchpad/sampleColumn.ts" />
 /// <reference path="launchpad/sampleLength.ts" />
 /// <reference path="launchpad/sampleManager.ts" />
+/// <reference path="launchpad/samplePlaySynchronizer.ts" />
 /// <reference path="launchpad/sampleRow.ts" />
 /// <reference path="launchpad/sampleState.ts" />
 /// <reference path="launchpad/sampleType.ts" />

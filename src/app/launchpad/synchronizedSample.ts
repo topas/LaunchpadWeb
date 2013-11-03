@@ -9,7 +9,7 @@ module Launchpad {
 			super();
 			this.sample = sample;
 			this.tempoSynchronizer = tempoSynchronizer;
-			this.sample.sampleChanged().on((state?: SampleState) => this.internalSampleStateChanged(state));
+			this.sample.stateChanged().on((sample?: ISample, state?: SampleState) => this.internalSampleStateChanged(sample, state));
 		}
 
 		src(): string {
@@ -29,8 +29,7 @@ module Launchpad {
 			this.tempoSynchronizer.stop(this.sample);
 		}
 
-		private internalSampleStateChanged(state: SampleState) {
-			console.debug(""+state);
+		private internalSampleStateChanged(sample: ISample, state: SampleState) {			
 			this.setState(state);
 		}
 	}

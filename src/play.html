@@ -18,7 +18,7 @@
          <div class="row" ng-repeat="row in board.buttons.rows">
             <div ng-class="['col-md-1', button.state]" ng-repeat="button in row.buttons">
                 <button ng-class="['btn', button.state]" ng-click="button.click()">
-                    <span class="glyphicon" ng-class="{ 'glyphicon-stop': isButtonPlaying(button), 'glyphicon-play' : !isButtonPlaying(button) }"></span>
+                    <span class="glyphicon" ng-class="{ 'glyphicon-play': isSampleLoaded(button), 'glyphicon-stop' : !isSampleLoaded(button) }"></span>
                 </button>
             </div>
 

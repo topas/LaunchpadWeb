@@ -6,7 +6,8 @@ module Launchpad {
 
 			var soundJsWrapper = new SoundJsWrapper();			
 			var tempoSynchronizer = new TempoSynchronizer(140, timeoutService);
-			var mgr = new SampleManager(soundJsWrapper, "./sounds/", tempoSynchronizer);
+			var samplePlaySynchronizer = new SamplePlaySynchronizer();
+			var mgr = new SampleManager(soundJsWrapper, "./sounds/", tempoSynchronizer, samplePlaySynchronizer);
 			mgr.progressCallback = progressCallback;
 
 			mgr.add(0, 0, "skipyofficialmusic-drums1.wav", SampleType.Loop);
@@ -20,7 +21,7 @@ module Launchpad {
 			mgr.add(2, 1, "skipyofficialmusic-jump-up-synth.wav", SampleType.SinglePlay);
 			mgr.add(2, 2, "skipyofficialmusic-skrillex-summit-lead.wav", SampleType.Loop);
 
-			this.buttons = new ButtonBoard(mgr);
+			this.buttons = new ButtonBoard(mgr, samplePlaySynchronizer);
 
 			mgr.loadSamples();
 

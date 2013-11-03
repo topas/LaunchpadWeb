@@ -2,7 +2,7 @@ module Launchpad {
 
 	export interface ISample { 
 		state: SampleState;	
-		sampleChanged(): ILiteEvent<SampleState>;
+		stateChanged(): ILiteEvent<ISample, SampleState>;
 
 		src(): string;
 		setSoundInstance(instance: ISoundJsInstanceWrapper);
@@ -11,10 +11,10 @@ module Launchpad {
 	}
 
 	export class SampleBase implements ISample {
-		private onStateChanged = new LiteEvent<SampleState>(); 
+		private onStateChanged = new LiteEvent<ISample, SampleState>(); 
 
 		state: SampleState;				
-		sampleChanged(): ILiteEvent<SampleState> { return this.onStateChanged; }
+		stateChanged(): ILiteEvent<ISample, SampleState> { return this.onStateChanged; }
 
 		constructor() {
 			this.state = SampleState.None;
@@ -27,9 +27,8 @@ module Launchpad {
 
 		public setState(state: SampleState) {			
 			this.state = state;
-			this.onStateChanged.trigger(state);						
+			this.onStateChanged.trigger(this, state);						
 		}	
 
 	}
-
 }

@@ -4,12 +4,14 @@ module Launchpad {
 		buttons: Button[];
 		state: ButtonState;
 		sampleManager: ISampleManager;	
+		sampleRow: SampleRow;
 
-		constructor(rowIndex: number, columns: ButtonColumn[], sampleManager: ISampleManager) {
+		constructor(rowIndex: number, sampleRow: SampleRow, columns: ButtonColumn[], sampleManager: ISampleManager) {
 			this.index = rowIndex;
 			this.state = ButtonState.Disabled;
 			this.buttons = [];
 			this.sampleManager = sampleManager;			
+			this.sampleRow = sampleRow;
 
 			for(var columnIndex = 0; columnIndex < 8; columnIndex++) {
 				var sample = this.sampleManager.get(rowIndex, columnIndex);

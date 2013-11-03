@@ -14,22 +14,17 @@ module Launchpad {
 
 			if (this.sample != undefined)
 			{
-				this.sample.sampleChanged().on((state?: SampleState) => this.sampleStateChanged(state));
+				this.sample.stateChanged().on((sample?: ISample, state?: SampleState) => this.sampleStateChanged(state));
 			}
 		}
 
 		click(): void {
 			if (this.sample == undefined) {
+				this.column.stop();
 				return;
 			}
 
-			if (this.sample.state == SampleState.Playing || 
-				this.sample.state == SampleState.Waiting) {
-				this.sample.stop();
-			}
-			else {
-				this.sample.play();				
-			}
+			this.sample.play();				
 		}
 
 		private sampleStateChanged(state: SampleState) {

@@ -1,7 +1,7 @@
 module Launchpad {
 
 	export interface ISoundJsInstanceWrapper {
-		completed(): ILiteEvent<any>;
+		completed(): ILiteEvent<ISoundJsInstanceWrapper, any>;
 
 		play();
 		loop();
@@ -10,9 +10,9 @@ module Launchpad {
 
 	export class SoundJsInstanceWrapper implements ISoundJsInstanceWrapper {
 		private instance: createjs.SoundInstance;
-		private onCompleted = new LiteEvent<any>(); 
+		private onCompleted = new LiteEvent<ISoundJsInstanceWrapper, any>(); 
 
-		completed(): ILiteEvent<any> { return this.onCompleted; }
+		completed(): ILiteEvent<ISoundJsInstanceWrapper, any> { return this.onCompleted; }
 
 
 		constructor(src: string) {
@@ -33,7 +33,7 @@ module Launchpad {
 		}
 
 		private completedHandler() {
-			this.onCompleted.trigger();
+			this.onCompleted.trigger(this);
 		}
 	}
 

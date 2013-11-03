@@ -5,7 +5,7 @@ module Launchpad {
 	export interface IPlayScope  extends ng.IScope {
 		board: LaunchpadBoard;
 		progress: number;
-		isButtonPlaying: Function;
+		isSampleLoaded: Function;
 	}
 
 	export class PlayCtrl { 
@@ -15,11 +15,13 @@ module Launchpad {
 			$scope.progress = 0;
 
 			$scope.board = new LaunchpadBoard($timeout, (total: number, loaded: number) => { this.updateProgress($scope, total, loaded) });
-			$scope.isButtonPlaying = (button:Button) => this.isButtonPlaying(button);
+			$scope.isSampleLoaded = (button:Button) => this.isSampleLoaded(button);
 		}
 
-		isButtonPlaying(button: Button): boolean {
-			return button.state == ButtonState.Playing || button.state == ButtonState.Waiting;
+		isSampleLoaded(button: Button): boolean {
+			return button.state == ButtonState.SampleLoaded || 
+				   button.state == ButtonState.Playing || 
+				   button.state == ButtonState.Waiting;
 		}
 
 		private updateProgress($scope, total: number, loaded: number) {			

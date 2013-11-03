@@ -16,13 +16,19 @@ module Launchpad {
 		private samplesCount: number;
 		private samplesLoaded: number;
 		private tempoSynchronizer: ITempoSynchronizer;
+		private samplePlaySynchronizer: ISamplePlaySynchronizer;
 		
 		progressCallback: (total: number, loaded: number) => any;
 
-		constructor(soundJsWrapper: ISoundJsWrapper, basePath: string, tempoSynchronizer: ITempoSynchronizer) {				
+		constructor(soundJsWrapper: ISoundJsWrapper, 
+					basePath: string, 
+					tempoSynchronizer: ITempoSynchronizer, 
+					samplePlaySynchronizer: ISamplePlaySynchronizer) {				
+
 			this.basePath = basePath;
 			this.soundJsWrapper = soundJsWrapper;
 			this.tempoSynchronizer = tempoSynchronizer;
+			this.samplePlaySynchronizer = samplePlaySynchronizer;
 
 			this.samples = new Array(8);
   			for (var i = 0; i < 8; i++) {
@@ -38,6 +44,7 @@ module Launchpad {
 			var synchronizedSample = new SynchronizedSample(sample, this.tempoSynchronizer);
 
 			this.samples[row][column] = synchronizedSample;	
+			this.samplePlaySynchronizer.add(row, column, synchronizedSample);
 		}
 
 		get(row: number, column: number): ISample {
