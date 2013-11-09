@@ -174,7 +174,9 @@ var Launchpad;
 var Launchpad;
 (function (Launchpad) {
     var LaunchpadBoard = (function () {
-        function LaunchpadBoard(timeoutService, progressCallback) {
+        function LaunchpadBoard(timeoutService, midiWrapper, progressCallback) {
+            this.midiWrapper = midiWrapper;
+
             var soundJsWrapper = new Launchpad.SoundJsWrapper();
             var tempoSynchronizer = new Launchpad.TempoSynchronizer(140, timeoutService);
             var samplePlaySynchronizer = new Launchpad.SamplePlaySynchronizer();
@@ -197,6 +199,173 @@ var Launchpad;
         return LaunchpadBoard;
     })();
     Launchpad.LaunchpadBoard = LaunchpadBoard;
+})(Launchpad || (Launchpad = {}));
+var Launchpad;
+(function (Launchpad) {
+    var MidiMessage = (function () {
+        function MidiMessage(type, note, velocity) {
+            this.type = type;
+            this.note = note;
+            this.velocity = velocity;
+        }
+        return MidiMessage;
+    })();
+    Launchpad.MidiMessage = MidiMessage;
+
+    var NotInitializedState = (function () {
+        function NotInitializedState() {
+        }
+        NotInitializedState.prototype.getInputNames = function () {
+            return null;
+        };
+
+        NotInitializedState.prototype.setInputByName = function (name) {
+        };
+
+        NotInitializedState.prototype.getOutputNames = function () {
+            return null;
+        };
+
+        NotInitializedState.prototype.setOutputByName = function (name) {
+        };
+        NotInitializedState.prototype.send = function (message) {
+        };
+        NotInitializedState.prototype.received = function () {
+            return null;
+        };
+        return NotInitializedState;
+    })();
+
+    var InitilializedState = (function () {
+        function InitilializedState(midiAccess) {
+            this.onReceived = new LiteEvent();
+            this.currentInput = null;
+            this.currentOutput = null;
+            this.inputs = midiAccess.inputs();
+            this.outputs = midiAccess.outputs();
+        }
+        InitilializedState.prototype.received = function () {
+            return this.onReceived;
+        };
+
+        InitilializedState.prototype.getInputNames = function () {
+            return this.inputs.map(function (a) {
+                return a.name;
+            });
+        };
+
+        InitilializedState.prototype.setInputByName = function (name) {
+            var _this = this;
+            if (this.currentInput != null) {
+                this.currentInput.onmidimessage = null;
+            }
+
+            var inputs = this.inputs.filter(function (a) {
+                return a.name == name;
+            });
+            if (inputs.length == 1) {
+                this.currentInput = inputs[0];
+                this.currentInput.addEventListener("midimessage", function (message) {
+                    return _this.midiMessageReceived(message);
+                });
+            } else {
+                this.currentInput = null;
+            }
+        };
+
+        InitilializedState.prototype.getOutputNames = function () {
+            return this.outputs.map(function (a) {
+                return a.name;
+            });
+        };
+
+        InitilializedState.prototype.setOutputByName = function (name) {
+            var outputs = this.outputs.filter(function (a) {
+                return a.name == name;
+            });
+            if (outputs.length == 1) {
+                this.currentOutput = outputs[0];
+            } else {
+                this.currentOutput = null;
+            }
+        };
+
+        InitilializedState.prototype.send = function (message) {
+            this.currentOutput.send([message.type, message.note, message.velocity]);
+        };
+
+        InitilializedState.prototype.midiMessageReceived = function (message) {
+            if (message.data.length != 3) {
+                return;
+            }
+            var m = new MidiMessage(message.data[0], message.data[1], message.data[2]);
+            this.onReceived.trigger(this, m);
+        };
+        return InitilializedState;
+    })();
+
+    var MidiApiWrapper = (function () {
+        function MidiApiWrapper() {
+            var _this = this;
+            this.onInitOk = new LiteEvent();
+            this.onInitFailed = new LiteEvent();
+            this.onReceived = new LiteEvent();
+            this.state = new NotInitializedState();
+            (window.navigator).requestMIDIAccess().then(function (midiAccess) {
+                _this.initSuccessCallback(midiAccess);
+            }, function () {
+                return _this.initFailureCallback();
+            });
+        }
+        MidiApiWrapper.prototype.initOk = function () {
+            return this.onInitOk;
+        };
+        MidiApiWrapper.prototype.initFailed = function () {
+            return this.onInitFailed;
+        };
+        MidiApiWrapper.prototype.received = function () {
+            return this.onReceived;
+        };
+
+        MidiApiWrapper.prototype.getInputNames = function () {
+            return this.state.getInputNames();
+        };
+
+        MidiApiWrapper.prototype.setInputByName = function (name) {
+            this.state.setInputByName(name);
+        };
+
+        MidiApiWrapper.prototype.getOutputNames = function () {
+            return this.state.getOutputNames();
+        };
+
+        MidiApiWrapper.prototype.setOutputByName = function (name) {
+            this.state.setOutputByName(name);
+        };
+
+        MidiApiWrapper.prototype.send = function (message) {
+            this.state.send(message);
+        };
+
+        MidiApiWrapper.prototype.initSuccessCallback = function (midiAccess) {
+            var _this = this;
+            this.state = new InitilializedState(midiAccess);
+            this.state.received().on(function (state, message) {
+                return _this.midiReceivedCallback(message);
+            });
+            this.onInitOk.trigger(this);
+        };
+
+        MidiApiWrapper.prototype.initFailureCallback = function () {
+            this.onInitFailed.trigger(this);
+        };
+
+        MidiApiWrapper.prototype.midiReceivedCallback = function (message) {
+            this.onReceived.trigger(this, message);
+        };
+        return MidiApiWrapper;
+    })();
+    Launchpad.MidiApiWrapper = MidiApiWrapper;
 })(Launchpad || (Launchpad = {}));
 var __extends = this.__extends || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -577,13 +746,20 @@ var Launchpad;
     var PlayCtrl = (function () {
         function PlayCtrl($scope, $timeout) {
             var _this = this;
-            $scope.progress = 0;
+            this.midiWrapper = new Launchpad.MidiApiWrapper();
+            this.midiWrapper.initOk().on(function (midiWrapper, dummy) {
+                return _this.setMidiInputsAndOutputs($scope, midiWrapper);
+            });
 
-            $scope.board = new Launchpad.LaunchpadBoard($timeout, function (total, loaded) {
+            $scope.progress = 0;
+            $scope.board = new Launchpad.LaunchpadBoard($timeout, this.midiWrapper, function (total, loaded) {
                 _this.updateProgress($scope, total, loaded);
             });
             $scope.isSampleLoaded = function (button) {
                 return _this.isSampleLoaded(button);
+            };
+            $scope.midiSettingChanged = function () {
+                return _this.midiSettingChanged($scope);
             };
         }
         PlayCtrl.prototype.isSampleLoaded = function (button) {
@@ -594,6 +770,16 @@ var Launchpad;
             $scope.$apply(function () {
                 $scope.progress = (loaded / total) * 100;
             });
+        };
+
+        PlayCtrl.prototype.setMidiInputsAndOutputs = function ($scope, midiWrapper) {
+            $scope.midiInputs = midiWrapper.getInputNames();
+            $scope.midiOutputs = midiWrapper.getOutputNames();
+        };
+
+        PlayCtrl.prototype.midiSettingChanged = function ($scope) {
+            this.midiWrapper.setInputByName($scope.midiInput);
+            this.midiWrapper.setOutputByName($scope.midiOutput);
         };
         return PlayCtrl;
     })();

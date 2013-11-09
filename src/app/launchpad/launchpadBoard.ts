@@ -1,8 +1,11 @@
 module Launchpad {
 	export class LaunchpadBoard {
+		private midiWrapper: IMidiApiWrapper;
+
 		buttons: ButtonBoard;
 		
-		constructor(timeoutService: ng.ITimeoutService, progressCallback: (total: number, loaded: number) => any) {
+		constructor(timeoutService: ng.ITimeoutService, midiWrapper: IMidiApiWrapper, progressCallback: (total: number, loaded: number) => any) {
+			this.midiWrapper = midiWrapper;
 
 			var soundJsWrapper = new SoundJsWrapper();			
 			var tempoSynchronizer = new TempoSynchronizer(140, timeoutService);

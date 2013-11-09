@@ -9,6 +9,7 @@
 /// <reference path="launchpad/buttonRow.ts" />
 /// <reference path="launchpad/buttonState.ts" />
 /// <reference path="launchpad/launchpadBoard.ts" />
+/// <reference path="launchpad/midiApiWrapper.ts" />
 /// <reference path="launchpad/sample.ts" />
 /// <reference path="launchpad/sampleColumn.ts" />
 /// <reference path="launchpad/sampleLength.ts" />
