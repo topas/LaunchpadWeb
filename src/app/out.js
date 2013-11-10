@@ -1025,6 +1025,16 @@ var Launchpad;
         PlayCtrl.prototype.setMidiInputsAndOutputs = function ($scope, midiWrapper) {
             $scope.midiInputs = midiWrapper.getInputNames();
             $scope.midiOutputs = midiWrapper.getOutputNames();
+
+            $scope.midiInput = $scope.midiInputs.filter(function (a) {
+                return a == "Launchpad";
+            })[0];
+            $scope.midiOutput = $scope.midiOutputs.filter(function (a) {
+                return a == "Launchpad";
+            })[0];
+            if ($scope.midiInput && $scope.midiOutput) {
+                this.midiSettingChanged($scope);
+            }
         };
 
         PlayCtrl.prototype.midiSettingChanged = function ($scope) {

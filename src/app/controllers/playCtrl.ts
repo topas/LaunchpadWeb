@@ -12,7 +12,6 @@ module Launchpad {
 		board: LaunchpadBoard;
 		progress: number;
 		isSampleLoaded: Function;
-
 	}
 
 	export class PlayCtrl { 
@@ -44,6 +43,14 @@ module Launchpad {
 		private setMidiInputsAndOutputs($scope: IPlayScope, midiWrapper: IMidiApiWrapper) {
 			$scope.midiInputs = midiWrapper.getInputNames();
 			$scope.midiOutputs = midiWrapper.getOutputNames();
+
+			// try find launchpad input and output 
+			$scope.midiInput = $scope.midiInputs.filter(a => a == "Launchpad")[0];
+			$scope.midiOutput = $scope.midiOutputs.filter(a => a == "Launchpad")[0];
+			if ($scope.midiInput && $scope.midiOutput)
+			{
+				this.midiSettingChanged($scope);
+			}	
 		}
 
 		private midiSettingChanged($scope: IPlayScope) {
