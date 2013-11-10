@@ -1064,7 +1064,9 @@ var Launchpad;
         };
 
         PlayCtrl.prototype.lauchpadBoardChanged = function ($scope) {
-            $scope.$apply();
+            setTimeout(function () {
+                $scope.$apply();
+            }, 1);
         };
         return PlayCtrl;
     })();

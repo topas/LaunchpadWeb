@@ -62,7 +62,7 @@ module Launchpad {
 		}
 
 		private lauchpadBoardChanged($scope: IPlayScope) {
-			$scope.$apply();
+			setTimeout(() => { $scope.$apply()}, 1);
 		}
 	}
 
