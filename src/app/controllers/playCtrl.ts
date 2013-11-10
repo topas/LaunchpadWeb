@@ -12,6 +12,7 @@ module Launchpad {
 		board: LaunchpadBoard;
 		progress: number;
 		isSampleLoaded: Function;
+		midiError: boolean;
 	}
 
 	export class PlayCtrl { 
@@ -21,9 +22,11 @@ module Launchpad {
 		{
 			this.midiWrapper = new MidiApiWrapper();
 			this.midiWrapper.initOk().on((midiWrapper?: IMidiApiWrapper, dummy?: any) => this.setMidiInputsAndOutputs($scope, midiWrapper));
+			this.midiWrapper.initFailed().on(() => { $scope.midiError = true; })
 
 			$scope.progress = 0;	
 			$scope.board = new LaunchpadBoard($timeout, this.midiWrapper, (total: number, loaded: number) => { this.updateProgress($scope, total, loaded) });
+			$scope.board.changed().on(() => this.lauchpadBoardChanged($scope));
 			$scope.isSampleLoaded = (button:Button) => this.isSampleLoaded(button);
 			$scope.midiSettingChanged = () => this.midiSettingChanged($scope);
 		}
@@ -56,6 +59,10 @@ module Launchpad {
 		private midiSettingChanged($scope: IPlayScope) {
 			this.midiWrapper.setInputByName($scope.midiInput);
 			this.midiWrapper.setOutputByName($scope.midiOutput);
+		}
+
+		private lauchpadBoardChanged($scope: IPlayScope) {
+			$scope.$apply();
 		}
 	}
 

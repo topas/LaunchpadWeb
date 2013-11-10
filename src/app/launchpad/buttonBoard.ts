@@ -1,10 +1,13 @@
 module Launchpad {
 
 	export class ButtonBoard { 
+		private onButtonStateChanged = new LiteEvent<Button, ButtonState>(); 
 		private lauchpadMidi: ILaunchpadMidi;
 
 		rows: ButtonRow[];
 		columns: ButtonColumn[];	
+
+		buttonStateChanged(): ILiteEvent<Button, ButtonState> { return this.onButtonStateChanged; }
 
 		constructor(sampleManager: ISampleManager, samplePlaySynchronizer: ISamplePlaySynchronizer, lauchpadMidi: ILaunchpadMidi) {
 			this.lauchpadMidi = lauchpadMidi;
@@ -19,7 +22,7 @@ module Launchpad {
 			this.rows = [];
 			for(var row = 0; row < 8; row++) {
 				var buttonRow = new ButtonRow(row, samplePlaySynchronizer.getRow(row), this.columns, sampleManager);
-				buttonRow.buttonStateChanged().on((button?: Button) => this.updateButtonState(button));
+				buttonRow.buttonStateChanged().on((button?: Button, state?: ButtonState) => this.updateButtonState(button, state));
 				this.rows.push(buttonRow);
 			}				
 		}
@@ -36,12 +39,14 @@ module Launchpad {
 		private midiInitialized() {
 			for(var row = 0; row < 8; row++) {
 				for(var column = 0; column < 8; column++) {
-					this.updateButtonState(this.rows[row].buttons[column]);
+					var button = this.rows[row].buttons[column];
+					this.updateButtonState(button, button.state);
 				}
 			}
 		}
 
-		private updateButtonState(button: Button) {
+		private updateButtonState(button: Button, state: ButtonState) {
+			this.onButtonStateChanged.trigger(button, state);
 			switch(button.state) {
 				case ButtonState.Disabled:
 					this.lauchpadMidi.setButton(button.location, LaunchpadMidiButtonColor.Off);

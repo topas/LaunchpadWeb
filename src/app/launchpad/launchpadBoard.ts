@@ -1,8 +1,11 @@
 module Launchpad {
 	export class LaunchpadBoard {
+		private onChanged = new LiteEvent<LaunchpadBoard, any>(); 
 		private midiWrapper: IMidiApiWrapper;
 
 		buttons: ButtonBoard;
+
+		changed(): ILiteEvent<LaunchpadBoard, any> { return this.onChanged; }
 		
 		constructor(timeoutService: ng.ITimeoutService, midiWrapper: IMidiApiWrapper, progressCallback: (total: number, loaded: number) => any) {
 			this.midiWrapper = midiWrapper;
@@ -25,9 +28,9 @@ module Launchpad {
 			mgr.add(2, 1, "skipyofficialmusic-skrillex-summit-lead.wav", SampleType.Loop);
 
 			this.buttons = new ButtonBoard(mgr, samplePlaySynchronizer, launchpadMidi);
+			this.buttons.buttonStateChanged().on(() => this.onChanged.trigger(this));
 
 			mgr.loadSamples();
-
 		}
 	}
 }

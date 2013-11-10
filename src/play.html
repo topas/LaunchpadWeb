@@ -3,7 +3,7 @@
             <h3>
     		  Web version of novation launchpad
             </h3>
-            <form role="form">
+            <form role="form" ng-hide="midiError">
 
                 <div class="form-group">
                     <label for="midiOutput">MIDI Input</label>
@@ -14,8 +14,13 @@
                     <label for="midiOutput">MIDI Output</label>
                     <select class="form-control" name="midiOutput" ng-model="midiOutput" ng-options="item for item in midiOutputs" ng-change="midiSettingChanged()"></select>
                 </div>
-
             </form>
+
+            <div ng-show="midiError">
+                <div class="alert alert-danger"><strong>Cannot init MIDI</strong></div>
+
+                Please install (or reinstall) <a href="http://jazz-soft.net/download/Jazz-Plugin/">Jazz-Plugin</a>, restart your browser and refresh this page. Don't forget to connect your Novation Launchpad!  
+            </div>
 
             
     	</div>

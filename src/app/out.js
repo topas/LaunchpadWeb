@@ -113,6 +113,7 @@ var Launchpad;
     var ButtonBoard = (function () {
         function ButtonBoard(sampleManager, samplePlaySynchronizer, lauchpadMidi) {
             var _this = this;
+            this.onButtonStateChanged = new LiteEvent();
             this.lauchpadMidi = lauchpadMidi;
             this.lauchpadMidi.initialized().on(function () {
                 return _this.midiInitialized();
@@ -129,12 +130,16 @@ var Launchpad;
             this.rows = [];
             for (var row = 0; row < 8; row++) {
                 var buttonRow = new Launchpad.ButtonRow(row, samplePlaySynchronizer.getRow(row), this.columns, sampleManager);
-                buttonRow.buttonStateChanged().on(function (button) {
-                    return _this.updateButtonState(button);
+                buttonRow.buttonStateChanged().on(function (button, state) {
+                    return _this.updateButtonState(button, state);
                 });
                 this.rows.push(buttonRow);
             }
         }
+        ButtonBoard.prototype.buttonStateChanged = function () {
+            return this.onButtonStateChanged;
+        };
+
         ButtonBoard.prototype.midiButtonPressed = function (location) {
             if (location.row >= 0 && location.row < 8 && location.column >= 0 && location.column < 8) {
                 this.rows[location.row].buttons[location.column].click();
@@ -144,12 +149,14 @@ var Launchpad;
         ButtonBoard.prototype.midiInitialized = function () {
             for (var row = 0; row < 8; row++) {
                 for (var column = 0; column < 8; column++) {
-                    this.updateButtonState(this.rows[row].buttons[column]);
+                    var button = this.rows[row].buttons[column];
+                    this.updateButtonState(button, button.state);
                 }
             }
         };
 
-        ButtonBoard.prototype.updateButtonState = function (button) {
+        ButtonBoard.prototype.updateButtonState = function (button, state) {
+            this.onButtonStateChanged.trigger(button, state);
             switch (button.state) {
                 case Launchpad.ButtonState.Disabled:
                     this.lauchpadMidi.setButton(button.location, Launchpad.LaunchpadMidiButtonColor.Off);
@@ -280,6 +287,8 @@ var Launchpad;
 (function (Launchpad) {
     var LaunchpadBoard = (function () {
         function LaunchpadBoard(timeoutService, midiWrapper, progressCallback) {
+            var _this = this;
+            this.onChanged = new LiteEvent();
             this.midiWrapper = midiWrapper;
 
             var soundJsWrapper = new Launchpad.SoundJsWrapper();
@@ -299,9 +308,15 @@ var Launchpad;
             mgr.add(2, 1, "skipyofficialmusic-skrillex-summit-lead.wav", Launchpad.SampleType.Loop);
 
             this.buttons = new Launchpad.ButtonBoard(mgr, samplePlaySynchronizer, launchpadMidi);
+            this.buttons.buttonStateChanged().on(function () {
+                return _this.onChanged.trigger(_this);
+            });
 
             mgr.loadSamples();
         }
+        LaunchpadBoard.prototype.changed = function () {
+            return this.onChanged;
+        };
         return LaunchpadBoard;
     })();
     Launchpad.LaunchpadBoard = LaunchpadBoard;
@@ -1000,10 +1015,16 @@ var Launchpad;
             this.midiWrapper.initOk().on(function (midiWrapper, dummy) {
                 return _this.setMidiInputsAndOutputs($scope, midiWrapper);
             });
+            this.midiWrapper.initFailed().on(function () {
+                $scope.midiError = true;
+            });
 
             $scope.progress = 0;
             $scope.board = new Launchpad.LaunchpadBoard($timeout, this.midiWrapper, function (total, loaded) {
                 _this.updateProgress($scope, total, loaded);
+            });
+            $scope.board.changed().on(function () {
+                return _this.lauchpadBoardChanged($scope);
             });
             $scope.isSampleLoaded = function (button) {
                 return _this.isSampleLoaded(button);
@@ -1040,6 +1061,10 @@ var Launchpad;
         PlayCtrl.prototype.midiSettingChanged = function ($scope) {
             this.midiWrapper.setInputByName($scope.midiInput);
             this.midiWrapper.setOutputByName($scope.midiOutput);
+        };
+
+        PlayCtrl.prototype.lauchpadBoardChanged = function ($scope) {
+            $scope.$apply();
         };
         return PlayCtrl;
     })();
