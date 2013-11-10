@@ -35,16 +35,22 @@ module Launchpad {
     			this.samples[i] = new Array(8);
   			}
 
+  			for (var row = 0; row < 8; row++) {
+				for (var col = 0; col < 8; col++) {
+    				this.addSample(row, col, new EmptySample());
+  				}    			
+  			}
+
   			this.soundJsWrapper.setSoundLoadedCallback((src: string) => this.soundLoadedHandler(src));  			
 		}
 
 		add(row: number, column: number, filename: string, type: SampleType) {
+			this.addSample(row, column, new Sample(filename, type));	
+		}
 
-			var sample = new Sample(filename, type);
-			var synchronizedSample = new SynchronizedSample(sample, this.tempoSynchronizer);
-
-			this.samples[row][column] = synchronizedSample;	
-			this.samplePlaySynchronizer.add(row, column, synchronizedSample);
+		private addSample(row: number, column: number, sample: ISample) {
+			this.samples[row][column] = new SynchronizedSample(sample, this.tempoSynchronizer);	
+			this.samplePlaySynchronizer.set(row, column, sample);
 		}
 
 		get(row: number, column: number): ISample {
@@ -56,8 +62,12 @@ module Launchpad {
 			var loadSounds = [];			
 			this.samplesCount = 0;
 			this.samplesLoaded = 0;
-			this.forEachSample((sample: Sample) => {								
-				loadSounds.push(sample.src());				
+			this.forEachSample((sample: Sample) => {	
+				var src = sample.src();
+				if (src == null) {
+					return;
+				}							
+				loadSounds.push(src);				
 				this.samplesCount++;				
 			});
 

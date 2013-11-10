@@ -9,31 +9,39 @@ module Launchpad {
 
 		private timeoutService: ng.ITimeoutService;
 		private tempoDelay: number;
-		private sampleQueue: ISample[];
+		private playSampleQueue: ISample[];
+		private stopSampleQueue: ISample[];
 
 		constructor(bpm: number, timeoutService: ng.ITimeoutService) {
 			this.timeoutService = timeoutService;
 			this.tempoDelay = this.getDelayByBpm(bpm);
-			this.sampleQueue = [];
+			this.playSampleQueue = [];
+			this.stopSampleQueue = [];
 
 			this.setProcessInterval();
 		}
 
 		play(sample: ISample) {
-			this.sampleQueue.push(sample);			
+			this.playSampleQueue.push(sample);			
 		}
 
 		stop(sample: ISample) {
-			var index =  this.sampleQueue.indexOf(sample);
-			this.sampleQueue.splice(index, 1);			
-			sample.stop();
+			this.stopSampleQueue.push(sample);							
 		}
 
 		private processSampleQueue() {
 
-			while (this.sampleQueue.length > 0)
+			while (this.stopSampleQueue.length > 0)
 			{
-				var sample = this.sampleQueue.shift();
+				var sample = this.stopSampleQueue.shift();
+				var index =  this.playSampleQueue.indexOf(sample);
+				this.playSampleQueue.splice(index, 1);			
+				sample.stop();
+			}
+
+			while (this.playSampleQueue.length > 0)
+			{
+				var sample = this.playSampleQueue.shift();
 				sample.play();
 			}
 			this.setProcessInterval();

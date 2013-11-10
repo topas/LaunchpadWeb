@@ -1,10 +1,14 @@
 module Launchpad {
 	export class ButtonRow {
+		private onButtonStateChanged = new LiteEvent<Button, ButtonState>(); 
+
 		index: number;
 		buttons: Button[];
 		state: ButtonState;
 		sampleManager: ISampleManager;	
 		sampleRow: SampleRow;
+
+		buttonStateChanged(): ILiteEvent<Button, ButtonState> { return this.onButtonStateChanged; }
 
 		constructor(rowIndex: number, sampleRow: SampleRow, columns: ButtonColumn[], sampleManager: ISampleManager) {
 			this.index = rowIndex;
@@ -17,6 +21,7 @@ module Launchpad {
 				var sample = this.sampleManager.get(rowIndex, columnIndex);
 				var column = columns[columnIndex];
 				var button = new Button(this, column, sample);
+				button.stateChanged().on((button?: Button, state?: ButtonState) => this.onButtonStateChanged.trigger(button, state));
 				column.addButton(button);
 				this.addButton(button);
 			}

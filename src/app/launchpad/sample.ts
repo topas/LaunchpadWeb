@@ -2,14 +2,16 @@ module Launchpad {
 
 	export class Sample extends SampleBase {
 		private instance: ISoundJsInstanceWrapper;
-		private type: SampleType;
+		private sampleType: SampleType;
 		private srcPath: string;			
 
-		constructor(src: string, type: SampleType) {
+		constructor(src: string, sampleType: SampleType) {
 			super();
 			this.srcPath = src;			
-			this.type = type;			
+			this.sampleType = sampleType;			
 		}
+
+		type(): SampleType { return this.sampleType; }
 
 		setSoundInstance(instance: ISoundJsInstanceWrapper) {
 			this.instance = instance;
@@ -23,7 +25,7 @@ module Launchpad {
 		}
 
 		play() { 
-			if (this.type == SampleType.Loop) {
+			if (this.sampleType == SampleType.Loop) {
 				this.instance.loop();
 			}
 			else {

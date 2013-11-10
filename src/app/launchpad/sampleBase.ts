@@ -2,6 +2,7 @@ module Launchpad {
 
 	export interface ISample { 
 		state: SampleState;	
+		type(): SampleType;
 		stateChanged(): ILiteEvent<ISample, SampleState>;
 
 		src(): string;
@@ -20,6 +21,7 @@ module Launchpad {
 			this.state = SampleState.None;
 		}
 
+		type(): SampleType { throw "Abstract method"; }
 		setSoundInstance(instance: ISoundJsInstanceWrapper) { throw "Abstract method"; }
 		src(): string { throw "Abstract method"; }
 		play() { throw "Abstract method";}

@@ -12,6 +12,8 @@ module Launchpad {
 			this.sample.stateChanged().on((sample?: ISample, state?: SampleState) => this.internalSampleStateChanged(sample, state));
 		}
 
+		type(): SampleType { return this.sample.type(); }
+
 		src(): string {
 			return this.sample.src();
 		}
@@ -26,6 +28,7 @@ module Launchpad {
 		}
 
 		stop() {
+			this.setState(SampleState.Waiting);
 			this.tempoSynchronizer.stop(this.sample);
 		}
 

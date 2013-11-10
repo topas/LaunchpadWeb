@@ -18,22 +18,22 @@ button.Waiting {
 
 @keyframes 'waiting-blink' {
     0% { background: rgba(0,0,0,0); }
-    50% { background: orange; }
+    50% { background: green; }
     100% { background: rgba(0,0,0,0); }
 }
 
 @-webkit-keyframes 'waiting-blink' {
     0% { background: rgba(0,0,0,0); }
-    50% { background: orange; }
+    50% { background: green; }
     100% { background: rgba(0,0,0,0); }
 }
 
 button.Playing {
-	background-color: orange;
+	background-color: green;
 }
 
 button.SampleLoaded {
-	background-color: green;
+	background-color: orange;
 }
 
 button.Disabled {

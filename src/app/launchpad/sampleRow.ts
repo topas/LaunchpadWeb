@@ -8,8 +8,8 @@ module Launchpad {
 			this.samples = [];			
 		}
 
-		addSample(sample: ISample) {
-			this.samples.push(sample);
+		setSample(index: number, sample: ISample) {
+			this.samples[index] = sample;
 		}
 	}
 }

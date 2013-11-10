@@ -8,6 +8,7 @@ module Launchpad {
 			this.midiWrapper = midiWrapper;
 
 			var soundJsWrapper = new SoundJsWrapper();			
+			var launchpadMidi = new LaunchpadMidi(midiWrapper);
 			var tempoSynchronizer = new TempoSynchronizer(140, timeoutService);
 			var samplePlaySynchronizer = new SamplePlaySynchronizer();
 			var mgr = new SampleManager(soundJsWrapper, "./sounds/", tempoSynchronizer, samplePlaySynchronizer);
@@ -23,7 +24,7 @@ module Launchpad {
 
 			mgr.add(2, 1, "skipyofficialmusic-skrillex-summit-lead.wav", SampleType.Loop);
 
-			this.buttons = new ButtonBoard(mgr, samplePlaySynchronizer);
+			this.buttons = new ButtonBoard(mgr, samplePlaySynchronizer, launchpadMidi);
 
 			mgr.loadSamples();
 

@@ -9,6 +9,9 @@ var Launchpad;
             return this.onStateChanged;
         };
 
+        SampleBase.prototype.type = function () {
+            throw "Abstract method";
+        };
         SampleBase.prototype.setSoundInstance = function (instance) {
             throw "Abstract method";
         };
@@ -58,42 +61,48 @@ var Launchpad;
     var Button = (function () {
         function Button(row, column, sample) {
             var _this = this;
+            this.onStateChanged = new LiteEvent();
             this.row = row;
             this.column = column;
+            this.location = new Launchpad.ButtonLocation(row.index, column.index);
             this.state = Launchpad.ButtonState.Disabled;
             this.sample = sample;
 
-            if (this.sample != undefined) {
-                this.sample.stateChanged().on(function (sample, state) {
-                    return _this.sampleStateChanged(state);
-                });
-            }
+            this.sample.stateChanged().on(function (sample, state) {
+                return _this.sampleStateChanged(state);
+            });
         }
-        Button.prototype.click = function () {
-            if (this.sample == undefined) {
-                this.column.stop();
-                return;
-            }
+        Button.prototype.stateChanged = function () {
+            return this.onStateChanged;
+        };
 
+        Button.prototype.click = function () {
             this.sample.play();
         };
 
         Button.prototype.sampleStateChanged = function (state) {
-            if (state == Launchpad.SampleState.Loaded) {
-                this.state = Launchpad.ButtonState.SampleLoaded;
+            switch (state) {
+                case Launchpad.SampleState.None:
+                    this.changeState(Launchpad.ButtonState.Disabled);
+                    break;
+                case Launchpad.SampleState.Waiting:
+                    this.changeState(Launchpad.ButtonState.Waiting);
+                    break;
+                case Launchpad.SampleState.Stopped:
+                    this.changeState(Launchpad.ButtonState.SampleLoaded);
+                    break;
+                case Launchpad.SampleState.Loaded:
+                    this.changeState(Launchpad.ButtonState.SampleLoaded);
+                    break;
+                case Launchpad.SampleState.Playing:
+                    this.changeState(Launchpad.ButtonState.Playing);
+                    break;
             }
+        };
 
-            if (state == Launchpad.SampleState.Playing) {
-                this.state = Launchpad.ButtonState.Playing;
-            }
-
-            if (state == Launchpad.SampleState.Stopped) {
-                this.state = Launchpad.ButtonState.SampleLoaded;
-            }
-
-            if (state == Launchpad.SampleState.Waiting) {
-                this.state = Launchpad.ButtonState.Waiting;
-            }
+        Button.prototype.changeState = function (state) {
+            this.state = state;
+            this.onStateChanged.trigger(this, this.state);
         };
         return Button;
     })();
@@ -102,7 +111,16 @@ var Launchpad;
 var Launchpad;
 (function (Launchpad) {
     var ButtonBoard = (function () {
-        function ButtonBoard(sampleManager, samplePlaySynchronizer) {
+        function ButtonBoard(sampleManager, samplePlaySynchronizer, lauchpadMidi) {
+            var _this = this;
+            this.lauchpadMidi = lauchpadMidi;
+            this.lauchpadMidi.initialized().on(function () {
+                return _this.midiInitialized();
+            });
+            this.lauchpadMidi.buttonPressed().on(function (lauchpadMidi, location) {
+                return _this.midiButtonPressed(location);
+            });
+
             this.columns = [];
             for (var column = 0; column < 8; column++) {
                 this.columns.push(new Launchpad.ButtonColumn(column, samplePlaySynchronizer.getColumn(column)));
@@ -110,9 +128,43 @@ var Launchpad;
 
             this.rows = [];
             for (var row = 0; row < 8; row++) {
-                this.rows.push(new Launchpad.ButtonRow(row, samplePlaySynchronizer.getRow(row), this.columns, sampleManager));
+                var buttonRow = new Launchpad.ButtonRow(row, samplePlaySynchronizer.getRow(row), this.columns, sampleManager);
+                buttonRow.buttonStateChanged().on(function (button) {
+                    return _this.updateButtonState(button);
+                });
+                this.rows.push(buttonRow);
             }
         }
+        ButtonBoard.prototype.midiButtonPressed = function (location) {
+            if (location.row >= 0 && location.row < 8 && location.column >= 0 && location.column < 8) {
+                this.rows[location.row].buttons[location.column].click();
+            }
+        };
+
+        ButtonBoard.prototype.midiInitialized = function () {
+            for (var row = 0; row < 8; row++) {
+                for (var column = 0; column < 8; column++) {
+                    this.updateButtonState(this.rows[row].buttons[column]);
+                }
+            }
+        };
+
+        ButtonBoard.prototype.updateButtonState = function (button) {
+            switch (button.state) {
+                case Launchpad.ButtonState.Disabled:
+                    this.lauchpadMidi.setButton(button.location, Launchpad.LaunchpadMidiButtonColor.Off);
+                    break;
+                case Launchpad.ButtonState.SampleLoaded:
+                    this.lauchpadMidi.setButton(button.location, Launchpad.LaunchpadMidiButtonColor.Yellow);
+                    break;
+                case Launchpad.ButtonState.Waiting:
+                    this.lauchpadMidi.setButton(button.location, Launchpad.LaunchpadMidiButtonColor.GreenFlashing);
+                    break;
+                case Launchpad.ButtonState.Playing:
+                    this.lauchpadMidi.setButton(button.location, Launchpad.LaunchpadMidiButtonColor.Green);
+                    break;
+            }
+        };
         return ButtonBoard;
     })();
     Launchpad.ButtonBoard = ButtonBoard;
@@ -138,8 +190,21 @@ var Launchpad;
 })(Launchpad || (Launchpad = {}));
 var Launchpad;
 (function (Launchpad) {
+    var ButtonLocation = (function () {
+        function ButtonLocation(row, column) {
+            this.row = row;
+            this.column = column;
+        }
+        return ButtonLocation;
+    })();
+    Launchpad.ButtonLocation = ButtonLocation;
+})(Launchpad || (Launchpad = {}));
+var Launchpad;
+(function (Launchpad) {
     var ButtonRow = (function () {
         function ButtonRow(rowIndex, sampleRow, columns, sampleManager) {
+            var _this = this;
+            this.onButtonStateChanged = new LiteEvent();
             this.index = rowIndex;
             this.state = Launchpad.ButtonState.Disabled;
             this.buttons = [];
@@ -150,10 +215,17 @@ var Launchpad;
                 var sample = this.sampleManager.get(rowIndex, columnIndex);
                 var column = columns[columnIndex];
                 var button = new Launchpad.Button(this, column, sample);
+                button.stateChanged().on(function (button, state) {
+                    return _this.onButtonStateChanged.trigger(button, state);
+                });
                 column.addButton(button);
                 this.addButton(button);
             }
         }
+        ButtonRow.prototype.buttonStateChanged = function () {
+            return this.onButtonStateChanged;
+        };
+
         ButtonRow.prototype.addButton = function (button) {
             this.buttons.push(button);
         };
@@ -171,6 +243,39 @@ var Launchpad;
     })(Launchpad.ButtonState || (Launchpad.ButtonState = {}));
     var ButtonState = Launchpad.ButtonState;
 })(Launchpad || (Launchpad = {}));
+var __extends = this.__extends || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    __.prototype = b.prototype;
+    d.prototype = new __();
+};
+var Launchpad;
+(function (Launchpad) {
+    var EmptySample = (function (_super) {
+        __extends(EmptySample, _super);
+        function EmptySample() {
+            _super.call(this);
+            this.setState(Launchpad.SampleState.None);
+        }
+        EmptySample.prototype.src = function () {
+            return null;
+        };
+
+        EmptySample.prototype.type = function () {
+            return Launchpad.SampleType.Empty;
+        };
+
+        EmptySample.prototype.play = function () {
+            this.setState(Launchpad.SampleState.Playing);
+        };
+
+        EmptySample.prototype.stop = function () {
+            this.setState(Launchpad.SampleState.None);
+        };
+        return EmptySample;
+    })(Launchpad.SampleBase);
+    Launchpad.EmptySample = EmptySample;
+})(Launchpad || (Launchpad = {}));
 var Launchpad;
 (function (Launchpad) {
     var LaunchpadBoard = (function () {
@@ -178,6 +283,7 @@ var Launchpad;
             this.midiWrapper = midiWrapper;
 
             var soundJsWrapper = new Launchpad.SoundJsWrapper();
+            var launchpadMidi = new Launchpad.LaunchpadMidi(midiWrapper);
             var tempoSynchronizer = new Launchpad.TempoSynchronizer(140, timeoutService);
             var samplePlaySynchronizer = new Launchpad.SamplePlaySynchronizer();
             var mgr = new Launchpad.SampleManager(soundJsWrapper, "./sounds/", tempoSynchronizer, samplePlaySynchronizer);
@@ -192,13 +298,101 @@ var Launchpad;
 
             mgr.add(2, 1, "skipyofficialmusic-skrillex-summit-lead.wav", Launchpad.SampleType.Loop);
 
-            this.buttons = new Launchpad.ButtonBoard(mgr, samplePlaySynchronizer);
+            this.buttons = new Launchpad.ButtonBoard(mgr, samplePlaySynchronizer, launchpadMidi);
 
             mgr.loadSamples();
         }
         return LaunchpadBoard;
     })();
     Launchpad.LaunchpadBoard = LaunchpadBoard;
+})(Launchpad || (Launchpad = {}));
+var Launchpad;
+(function (Launchpad) {
+    (function (LaunchpadMidiButtonColor) {
+        LaunchpadMidiButtonColor[LaunchpadMidiButtonColor["Off"] = 0] = "Off";
+        LaunchpadMidiButtonColor[LaunchpadMidiButtonColor["Red"] = 1] = "Red";
+        LaunchpadMidiButtonColor[LaunchpadMidiButtonColor["Amber"] = 2] = "Amber";
+        LaunchpadMidiButtonColor[LaunchpadMidiButtonColor["Green"] = 3] = "Green";
+        LaunchpadMidiButtonColor[LaunchpadMidiButtonColor["Yellow"] = 4] = "Yellow";
+        LaunchpadMidiButtonColor[LaunchpadMidiButtonColor["RedFlashing"] = 5] = "RedFlashing";
+        LaunchpadMidiButtonColor[LaunchpadMidiButtonColor["AmberFlashing"] = 6] = "AmberFlashing";
+        LaunchpadMidiButtonColor[LaunchpadMidiButtonColor["GreenFlashing"] = 7] = "GreenFlashing";
+        LaunchpadMidiButtonColor[LaunchpadMidiButtonColor["YellowFlashing"] = 8] = "YellowFlashing";
+    })(Launchpad.LaunchpadMidiButtonColor || (Launchpad.LaunchpadMidiButtonColor = {}));
+    var LaunchpadMidiButtonColor = Launchpad.LaunchpadMidiButtonColor;
+
+    var LaunchpadMidi = (function () {
+        function LaunchpadMidi(midiWrapper) {
+            var _this = this;
+            this.onInitialized = new LiteEvent();
+            this.onButtonPressed = new LiteEvent();
+            this.midiWrapper = midiWrapper;
+
+            this.midiWrapper.received().on(function (wrapper, message) {
+                return _this.midiMessageReceived(message);
+            });
+            this.midiWrapper.outputSet().on(function () {
+                return _this.initLaunchpad();
+            });
+        }
+        LaunchpadMidi.prototype.initialized = function () {
+            return this.onInitialized;
+        };
+        LaunchpadMidi.prototype.buttonPressed = function () {
+            return this.onButtonPressed;
+        };
+
+        LaunchpadMidi.prototype.setButton = function (location, color) {
+            var note = (0x10 * location.row) + location.column;
+            this.midiWrapper.send(new Launchpad.MidiMessage(0x90, note, this.getVelocity(color)));
+        };
+
+        LaunchpadMidi.prototype.initLaunchpad = function () {
+            this.midiWrapper.send(new Launchpad.MidiMessage(0xB0, 0x00, 0x00));
+            this.midiWrapper.send(new Launchpad.MidiMessage(0xB0, 0x00, 0x28));
+            this.midiWrapper.send(new Launchpad.MidiMessage(0xB0, 0x6C, this.getVelocity(LaunchpadMidiButtonColor.Green)));
+
+            this.onInitialized.trigger(this);
+        };
+
+        LaunchpadMidi.prototype.midiMessageReceived = function (message) {
+            if (message.type != 0x90 || message.velocity != 0x7F) {
+                return;
+            }
+
+            var row = Math.floor(message.note / 0x10);
+            var column = message.note % 0x10;
+
+            var location = new Launchpad.ButtonLocation(row, column);
+
+            this.onButtonPressed.trigger(this, location);
+        };
+
+        LaunchpadMidi.prototype.getVelocity = function (buttonColor) {
+            switch (buttonColor) {
+                case LaunchpadMidiButtonColor.Off:
+                    return 0x0C;
+                case LaunchpadMidiButtonColor.Red:
+                    return 0x0F;
+                case LaunchpadMidiButtonColor.Amber:
+                    return 0x3F;
+                case LaunchpadMidiButtonColor.Green:
+                    return 0x3C;
+                case LaunchpadMidiButtonColor.Yellow:
+                    return 0x3E;
+                case LaunchpadMidiButtonColor.RedFlashing:
+                    return 0x0B;
+                case LaunchpadMidiButtonColor.AmberFlashing:
+                    return 0x3B;
+                case LaunchpadMidiButtonColor.GreenFlashing:
+                    return 0x38;
+                case LaunchpadMidiButtonColor.YellowFlashing:
+                    return 0x3A;
+            }
+        };
+        return LaunchpadMidi;
+    })();
+    Launchpad.LaunchpadMidi = LaunchpadMidi;
 })(Launchpad || (Launchpad = {}));
 var Launchpad;
 (function (Launchpad) {
@@ -215,6 +409,13 @@ var Launchpad;
     var NotInitializedState = (function () {
         function NotInitializedState() {
         }
+        NotInitializedState.prototype.inputSet = function () {
+            return null;
+        };
+        NotInitializedState.prototype.outputSet = function () {
+            return null;
+        };
+
         NotInitializedState.prototype.getInputNames = function () {
             return null;
         };
@@ -238,12 +439,24 @@ var Launchpad;
 
     var InitilializedState = (function () {
         function InitilializedState(midiAccess) {
+            var _this = this;
             this.onReceived = new LiteEvent();
+            this.onInputSet = new LiteEvent();
+            this.onOutputSet = new LiteEvent();
+            this.midiReceivedProxy = function (message) {
+                return _this.midiMessageReceived(message);
+            };
             this.currentInput = null;
             this.currentOutput = null;
             this.inputs = midiAccess.inputs();
             this.outputs = midiAccess.outputs();
         }
+        InitilializedState.prototype.inputSet = function () {
+            return this.onInputSet;
+        };
+        InitilializedState.prototype.outputSet = function () {
+            return this.onOutputSet;
+        };
         InitilializedState.prototype.received = function () {
             return this.onReceived;
         };
@@ -255,9 +468,8 @@ var Launchpad;
         };
 
         InitilializedState.prototype.setInputByName = function (name) {
-            var _this = this;
             if (this.currentInput != null) {
-                this.currentInput.onmidimessage = null;
+                this.currentInput.removeEventListener("midimessage", this.midiReceivedProxy);
             }
 
             var inputs = this.inputs.filter(function (a) {
@@ -265,9 +477,8 @@ var Launchpad;
             });
             if (inputs.length == 1) {
                 this.currentInput = inputs[0];
-                this.currentInput.addEventListener("midimessage", function (message) {
-                    return _this.midiMessageReceived(message);
-                });
+                this.currentInput.addEventListener("midimessage", this.midiReceivedProxy);
+                this.onInputSet.trigger(this);
             } else {
                 this.currentInput = null;
             }
@@ -285,12 +496,16 @@ var Launchpad;
             });
             if (outputs.length == 1) {
                 this.currentOutput = outputs[0];
+                this.onOutputSet.trigger(this);
             } else {
                 this.currentOutput = null;
             }
         };
 
         InitilializedState.prototype.send = function (message) {
+            if (this.currentOutput == null) {
+                return;
+            }
             this.currentOutput.send([message.type, message.note, message.velocity]);
         };
 
@@ -309,6 +524,8 @@ var Launchpad;
             var _this = this;
             this.onInitOk = new LiteEvent();
             this.onInitFailed = new LiteEvent();
+            this.onInputSet = new LiteEvent();
+            this.onOutputSet = new LiteEvent();
             this.onReceived = new LiteEvent();
             this.state = new NotInitializedState();
             (window.navigator).requestMIDIAccess().then(function (midiAccess) {
@@ -322,6 +539,12 @@ var Launchpad;
         };
         MidiApiWrapper.prototype.initFailed = function () {
             return this.onInitFailed;
+        };
+        MidiApiWrapper.prototype.inputSet = function () {
+            return this.onInputSet;
+        };
+        MidiApiWrapper.prototype.outputSet = function () {
+            return this.onOutputSet;
         };
         MidiApiWrapper.prototype.received = function () {
             return this.onReceived;
@@ -351,7 +574,13 @@ var Launchpad;
             var _this = this;
             this.state = new InitilializedState(midiAccess);
             this.state.received().on(function (state, message) {
-                return _this.midiReceivedCallback(message);
+                return _this.onReceived.trigger(_this, message);
+            });
+            this.state.inputSet().on(function (state, dummy) {
+                return _this.onInputSet.trigger(_this);
+            });
+            this.state.outputSet().on(function (state, dummy) {
+                return _this.onOutputSet.trigger(_this);
             });
             this.onInitOk.trigger(this);
         };
@@ -359,29 +588,23 @@ var Launchpad;
         MidiApiWrapper.prototype.initFailureCallback = function () {
             this.onInitFailed.trigger(this);
         };
-
-        MidiApiWrapper.prototype.midiReceivedCallback = function (message) {
-            this.onReceived.trigger(this, message);
-        };
         return MidiApiWrapper;
     })();
     Launchpad.MidiApiWrapper = MidiApiWrapper;
 })(Launchpad || (Launchpad = {}));
-var __extends = this.__extends || function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
-    __.prototype = b.prototype;
-    d.prototype = new __();
-};
 var Launchpad;
 (function (Launchpad) {
     var Sample = (function (_super) {
         __extends(Sample, _super);
-        function Sample(src, type) {
+        function Sample(src, sampleType) {
             _super.call(this);
             this.srcPath = src;
-            this.type = type;
+            this.sampleType = sampleType;
         }
+        Sample.prototype.type = function () {
+            return this.sampleType;
+        };
+
         Sample.prototype.setSoundInstance = function (instance) {
             var _this = this;
             this.instance = instance;
@@ -397,7 +620,7 @@ var Launchpad;
         };
 
         Sample.prototype.play = function () {
-            if (this.type == Launchpad.SampleType.Loop) {
+            if (this.sampleType == Launchpad.SampleType.Loop) {
                 this.instance.loop();
             } else {
                 this.instance.play();
@@ -425,9 +648,9 @@ var Launchpad;
             this.index = index;
             this.samples = [];
         }
-        SampleColumn.prototype.addSample = function (sample) {
+        SampleColumn.prototype.setSample = function (index, sample) {
             var _this = this;
-            this.samples.push(sample);
+            this.samples[index] = sample;
             sample.stateChanged().on(function (sample, state) {
                 return _this.sampleStateChanged(sample, state);
             });
@@ -441,10 +664,14 @@ var Launchpad;
 
         SampleColumn.prototype.sampleStateChanged = function (sample, state) {
             if (state == Launchpad.SampleState.Playing) {
-                var otherSamples = this.samples.filter(function (s) {
+                var samplesToStop = this.samples.filter(function (s) {
                     return s !== sample;
                 });
-                otherSamples.forEach(function (s) {
+                if (sample.type() == Launchpad.SampleType.Empty) {
+                    samplesToStop = this.samples;
+                }
+
+                samplesToStop.forEach(function (s) {
                     return s.stop();
                 });
             }
@@ -468,16 +695,23 @@ var Launchpad;
                 this.samples[i] = new Array(8);
             }
 
+            for (var row = 0; row < 8; row++) {
+                for (var col = 0; col < 8; col++) {
+                    this.addSample(row, col, new Launchpad.EmptySample());
+                }
+            }
+
             this.soundJsWrapper.setSoundLoadedCallback(function (src) {
                 return _this.soundLoadedHandler(src);
             });
         }
         SampleManager.prototype.add = function (row, column, filename, type) {
-            var sample = new Launchpad.Sample(filename, type);
-            var synchronizedSample = new Launchpad.SynchronizedSample(sample, this.tempoSynchronizer);
+            this.addSample(row, column, new Launchpad.Sample(filename, type));
+        };
 
-            this.samples[row][column] = synchronizedSample;
-            this.samplePlaySynchronizer.add(row, column, synchronizedSample);
+        SampleManager.prototype.addSample = function (row, column, sample) {
+            this.samples[row][column] = new Launchpad.SynchronizedSample(sample, this.tempoSynchronizer);
+            this.samplePlaySynchronizer.set(row, column, sample);
         };
 
         SampleManager.prototype.get = function (row, column) {
@@ -490,7 +724,11 @@ var Launchpad;
             this.samplesCount = 0;
             this.samplesLoaded = 0;
             this.forEachSample(function (sample) {
-                loadSounds.push(sample.src());
+                var src = sample.src();
+                if (src == null) {
+                    return;
+                }
+                loadSounds.push(src);
                 _this.samplesCount++;
             });
 
@@ -541,9 +779,9 @@ var Launchpad;
                 this.rows.push(new Launchpad.SampleRow(row));
             }
         }
-        SamplePlaySynchronizer.prototype.add = function (row, column, sample) {
-            this.columns[column].addSample(sample);
-            this.rows[row].addSample(sample);
+        SamplePlaySynchronizer.prototype.set = function (row, column, sample) {
+            this.columns[column].setSample(row, sample);
+            this.rows[row].setSample(column, sample);
         };
 
         SamplePlaySynchronizer.prototype.getRow = function (index) {
@@ -564,8 +802,8 @@ var Launchpad;
             this.index = index;
             this.samples = [];
         }
-        SampleRow.prototype.addSample = function (sample) {
-            this.samples.push(sample);
+        SampleRow.prototype.setSample = function (index, sample) {
+            this.samples[index] = sample;
         };
         return SampleRow;
     })();
@@ -585,6 +823,7 @@ var Launchpad;
 var Launchpad;
 (function (Launchpad) {
     (function (SampleType) {
+        SampleType[SampleType["Empty"] = "Empty"] = "Empty";
         SampleType[SampleType["SinglePlay"] = "SinglePlay"] = "SinglePlay";
         SampleType[SampleType["Loop"] = "Loop"] = "Loop";
     })(Launchpad.SampleType || (Launchpad.SampleType = {}));
@@ -674,6 +913,10 @@ var Launchpad;
                 return _this.internalSampleStateChanged(sample, state);
             });
         }
+        SynchronizedSample.prototype.type = function () {
+            return this.sample.type();
+        };
+
         SynchronizedSample.prototype.src = function () {
             return this.sample.src();
         };
@@ -688,6 +931,7 @@ var Launchpad;
         };
 
         SynchronizedSample.prototype.stop = function () {
+            this.setState(Launchpad.SampleState.Waiting);
             this.tempoSynchronizer.stop(this.sample);
         };
 
@@ -704,23 +948,29 @@ var Launchpad;
         function TempoSynchronizer(bpm, timeoutService) {
             this.timeoutService = timeoutService;
             this.tempoDelay = this.getDelayByBpm(bpm);
-            this.sampleQueue = [];
+            this.playSampleQueue = [];
+            this.stopSampleQueue = [];
 
             this.setProcessInterval();
         }
         TempoSynchronizer.prototype.play = function (sample) {
-            this.sampleQueue.push(sample);
+            this.playSampleQueue.push(sample);
         };
 
         TempoSynchronizer.prototype.stop = function (sample) {
-            var index = this.sampleQueue.indexOf(sample);
-            this.sampleQueue.splice(index, 1);
-            sample.stop();
+            this.stopSampleQueue.push(sample);
         };
 
         TempoSynchronizer.prototype.processSampleQueue = function () {
-            while (this.sampleQueue.length > 0) {
-                var sample = this.sampleQueue.shift();
+            while (this.stopSampleQueue.length > 0) {
+                var sample = this.stopSampleQueue.shift();
+                var index = this.playSampleQueue.indexOf(sample);
+                this.playSampleQueue.splice(index, 1);
+                sample.stop();
+            }
+
+            while (this.playSampleQueue.length > 0) {
+                var sample = this.playSampleQueue.shift();
                 sample.play();
             }
             this.setProcessInterval();

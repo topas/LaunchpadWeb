@@ -1,7 +1,7 @@
 module Launchpad {
 
 	export interface ISamplePlaySynchronizer {
-		add(row: number, column: number, sample: ISample);	
+		set(row: number, column: number, sample: ISample);	
 		getRow(index: number): SampleRow;
 		getColumn(index: number): SampleColumn;
 	}
@@ -22,9 +22,9 @@ module Launchpad {
 			}
 		}
 
-		add(row: number, column: number, sample: ISample) {
-			this.columns[column].addSample(sample);
-			this.rows[row].addSample(sample);
+		set(row: number, column: number, sample: ISample) {
+			this.columns[column].setSample(row, sample);
+			this.rows[row].setSample(column, sample);
 		}
 
 		getRow(index: number): SampleRow {
