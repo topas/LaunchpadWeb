@@ -48,6 +48,17 @@
                 <button  ng-class="['btn', row.state]" ng-click="row.click()"><span class="glyphicon glyphicon-play"></span></button>
             </div> -->
 
+        </div>
+
+        <div class="row">
+        </div>
+
+        <div class="row" ng-init="volume=20">
+            {{volume}}
+            <div class="col-md-1" >
+                <input type="text" slider class="span2" data-slider-min="0" data-slider-max="100" data-slider-step="1" data-slider-value="50" data-slider-orientation="vertical" data-slider-selection="after"data-slider-tooltip="show" data-slider-reversed="true" ng-model="volume" ng-change="test()">
+            </div>
+             
         </div> 
 
     </div>
