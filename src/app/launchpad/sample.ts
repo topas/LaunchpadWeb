@@ -3,7 +3,8 @@ module Launchpad {
 	export class Sample extends SampleBase {
 		private instance: ISoundJsInstanceWrapper;
 		private sampleType: SampleType;
-		private srcPath: string;			
+		private srcPath: string;	
+		private volume: number;		
 
 		constructor(src: string, sampleType: SampleType) {
 			super();
@@ -16,7 +17,7 @@ module Launchpad {
 		setSoundInstance(instance: ISoundJsInstanceWrapper) {
 			this.instance = instance;
 			this.setState(SampleState.Loaded);
-
+			this.updateVolume();
 			this.instance.completed().on(() => this.sampleCompleted());
 		}
 
@@ -38,6 +39,17 @@ module Launchpad {
 		stop() {
 			this.instance.stop();
 			this.setState(SampleState.Stopped);
+		}
+
+		setVolume(volume: number) { 
+			this.volume = volume;
+			this.updateVolume();
+		}
+
+		private updateVolume() {
+			if (this.instance != null) {
+				this.instance.setVolume(this.volume);
+			}
 		}
 
 		private sampleCompleted() {

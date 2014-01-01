@@ -24,6 +24,9 @@ var Launchpad;
         SampleBase.prototype.stop = function () {
             throw "Abstract method";
         };
+        SampleBase.prototype.setVolume = function (volume) {
+            throw "Abstract method";
+        };
 
         SampleBase.prototype.setState = function (state) {
             this.state = state;
@@ -183,6 +186,8 @@ var Launchpad;
             this.index = columnIndex;
             this.sampleColumn = sampleColumn;
             this.buttons = [];
+            this.volume = 90;
+            this.volumeChanged();
         }
         ButtonColumn.prototype.addButton = function (button) {
             this.buttons.push(button);
@@ -190,6 +195,10 @@ var Launchpad;
 
         ButtonColumn.prototype.stop = function () {
             this.sampleColumn.stop();
+        };
+
+        ButtonColumn.prototype.volumeChanged = function () {
+            this.sampleColumn.setVolume(this.volume);
         };
         return ButtonColumn;
     })();
@@ -278,6 +287,9 @@ var Launchpad;
 
         EmptySample.prototype.stop = function () {
             this.setState(Launchpad.SampleState.None);
+        };
+
+        EmptySample.prototype.setVolume = function (volume) {
         };
         return EmptySample;
     })(Launchpad.SampleBase);
@@ -624,7 +636,7 @@ var Launchpad;
             var _this = this;
             this.instance = instance;
             this.setState(Launchpad.SampleState.Loaded);
-
+            this.updateVolume();
             this.instance.completed().on(function () {
                 return _this.sampleCompleted();
             });
@@ -647,6 +659,17 @@ var Launchpad;
         Sample.prototype.stop = function () {
             this.instance.stop();
             this.setState(Launchpad.SampleState.Stopped);
+        };
+
+        Sample.prototype.setVolume = function (volume) {
+            this.volume = volume;
+            this.updateVolume();
+        };
+
+        Sample.prototype.updateVolume = function () {
+            if (this.instance != null) {
+                this.instance.setVolume(this.volume);
+            }
         };
 
         Sample.prototype.sampleCompleted = function () {
@@ -674,6 +697,12 @@ var Launchpad;
         SampleColumn.prototype.stop = function () {
             this.samples.forEach(function (s) {
                 return s.stop();
+            });
+        };
+
+        SampleColumn.prototype.setVolume = function (volume) {
+            this.samples.forEach(function (s) {
+                return s.setVolume(volume);
             });
         };
 
@@ -866,6 +895,10 @@ var Launchpad;
 
         SoundJsInstanceWrapper.prototype.stop = function () {
             this.instance.stop();
+        };
+
+        SoundJsInstanceWrapper.prototype.setVolume = function (volume) {
+            this.instance.setVolume(volume / 100);
         };
 
         SoundJsInstanceWrapper.prototype.completedHandler = function () {
@@ -1091,12 +1124,12 @@ launchpadApp.directive('slider', function () {
                     return;
                 }
 
-                $(element).slider('setValue', modelValue);
+                ($(element)).slider('setValue', modelValue);
             });
 
-            $(element).slider().on('slide', function (ev) {
+            ($(element)).slider().on('slide', function (ev) {
                 scope.$apply(function () {
-                    ngModel.$setViewValue($(element).slider('getValue'));
+                    ngModel.$setViewValue(($(element)).slider('getValue'));
                     scope.$eval(attrs.ngChange);
                 });
             });

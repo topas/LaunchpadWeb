@@ -19,12 +19,12 @@ launchpadApp.directive('slider', function() {
                 		return;
                 	}
 
-					 $(element).slider('setValue', modelValue);                   
+					 (<any>$(element)).slider('setValue', modelValue);                   
                 });
 
-			$(element).slider().on('slide', function(ev) {
+			(<any>$(element)).slider().on('slide', function(ev) {
     			scope.$apply(function() {    				
-    				ngModel.$setViewValue($(element).slider('getValue'));  
+    				ngModel.$setViewValue((<any>$(element)).slider('getValue'));  
     				scope.$eval(attrs.ngChange);     				
     			});    			
   			});

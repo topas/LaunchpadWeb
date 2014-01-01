@@ -18,6 +18,10 @@ module Launchpad {
 			this.samples.forEach(s => s.stop());
 		}
 
+		setVolume(volume: number) {
+			this.samples.forEach(s => s.setVolume(volume));
+		}
+
 		private sampleStateChanged(sample?: ISample, state?: SampleState) {	
 
 			if (state == SampleState.Playing)

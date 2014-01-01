@@ -6,6 +6,7 @@ module Launchpad {
 		play();
 		loop();
 		stop();
+		setVolume(volume: number);
 	}
 
 	export class SoundJsInstanceWrapper implements ISoundJsInstanceWrapper {
@@ -30,6 +31,10 @@ module Launchpad {
 
 		stop() {
 			this.instance.stop();
+		}
+
+		setVolume(volume: number) {						
+			this.instance.setVolume(volume / 100);
 		}
 
 		private completedHandler() {

@@ -20,6 +20,10 @@ module Launchpad {
 		stop() {			
 			this.setState(SampleState.None);
 		}
+
+		setVolume(volume: number) { 
+			// do nothing
+		}
 	}
 
 }
