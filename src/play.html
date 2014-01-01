@@ -38,7 +38,7 @@
         </div>      
 
          <div class="row" ng-repeat="row in board.buttons.rows">
-            <div ng-class="['col-md-1', button.state]" ng-repeat="button in row.buttons">
+            <div ng-class="['col-md-1 col-sm-1 col-xs-1', button.state]" ng-repeat="button in row.buttons">
                 <button ng-class="['btn', button.state]" ng-click="button.click()">
                     <span>&nbsp;</span>
                 </button>
@@ -54,7 +54,7 @@
         </div>
 
         <div class="row">            
-            <div class="col-md-1" ng-repeat="col in board.buttons.columns">                  
+            <div class="col-md-1 col-sm-1 col-xs-1" ng-repeat="col in board.buttons.columns">                  
                 <input type="text" slider class="span2" data-slider-min="0" data-slider-max="100" data-slider-step="1" data-slider-value="50" data-slider-orientation="vertical" data-slider-selection="after"data-slider-tooltip="show" data-slider-reversed="true" ng-model="col.volume" ng-change="col.volumeChanged()">
             </div>
              
