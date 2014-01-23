@@ -5,8 +5,5 @@
     "grunt": "~0.4.1",
     "grunt-ts" : "*",
     "grunt-contrib-connect": "*",
-    "chai": "*",
-    "mocha": "*",
-    "grunt-mocha-test": "*" 
   }
 }
