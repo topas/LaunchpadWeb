@@ -7,18 +7,18 @@ module Launchpad {
 
 	export class TempoSynchronizer implements ITempoSynchronizer {
 
-		private timeoutService: ng.ITimeoutService;
-		private tempoDelay: number;
+		private tickCount : number;
+		private metronome: IMetronome;		
 		private playSampleQueue: ISample[];
 		private stopSampleQueue: ISample[];
 
-		constructor(bpm: number, timeoutService: ng.ITimeoutService) {
-			this.timeoutService = timeoutService;
-			this.tempoDelay = this.getDelayByBpm(bpm);
+		constructor(metronome: IMetronome) {
+			this.metronome = metronome;
 			this.playSampleQueue = [];
 			this.stopSampleQueue = [];
+			this.tickCount = 0;
 
-			this.setProcessInterval();
+			this.metronome.ticked().on(() => this.metronomeTicked());
 		}
 
 		play(sample: ISample) {
@@ -44,16 +44,14 @@ module Launchpad {
 				var sample = this.playSampleQueue.shift();
 				sample.play();
 			}
-			this.setProcessInterval();
 		}
 
-		private setProcessInterval() {
-			this.timeoutService(() => this.processSampleQueue(), this.tempoDelay);
-		}
+		private metronomeTicked() {
+			if (this.tickCount % 4 == 0) {
+				this.processSampleQueue();
+			}
 
-		private getDelayByBpm(bpm: number): number {
-			var minute = 1000*60;	
-			return (minute / bpm) * 4 * 4;
-		}
+			this.tickCount++;
+		}		
 	}
 }

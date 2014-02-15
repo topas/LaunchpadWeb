@@ -33,6 +33,5 @@ module Launchpad {
 			this.state = state;
 			this.onStateChanged.trigger(this, state);						
 		}	
-
 	}
 }

@@ -17,9 +17,11 @@ module Launchpad {
 
 	export class PlayCtrl { 
 		private midiWrapper : IMidiApiWrapper;
+		private timeout:  ng.ITimeoutService;
 
 		constructor($scope: IPlayScope, $timeout: ng.ITimeoutService)
 		{
+			this.timeout = $timeout;
 			this.midiWrapper = new MidiApiWrapper();
 			this.midiWrapper.initOk().on((midiWrapper?: IMidiApiWrapper, dummy?: any) => this.setMidiInputsAndOutputs($scope, midiWrapper));
 			this.midiWrapper.initFailed().on(() => { $scope.midiError = true; })
@@ -28,7 +30,7 @@ module Launchpad {
 			$scope.board = new LaunchpadBoard($timeout, this.midiWrapper, (total: number, loaded: number) => { this.updateProgress($scope, total, loaded) });
 			$scope.board.changed().on(() => this.lauchpadBoardChanged($scope));
 			$scope.isSampleLoaded = (button:Button) => this.isSampleLoaded(button);
-			$scope.midiSettingChanged = () => this.midiSettingChanged($scope);
+			$scope.midiSettingChanged = () => this.midiSettingChanged($scope);			
 		}
 
 		isSampleLoaded(button: Button): boolean {
@@ -37,10 +39,11 @@ module Launchpad {
 				   button.state == ButtonState.Waiting;
 		}
 
-		private updateProgress($scope, total: number, loaded: number) {			
-			$scope.$apply(() => {
-				$scope.progress = (loaded / total) * 100;			
-				});			
+		private updateProgress($scope, total: number, loaded: number) {															
+			this.timeout(() => 
+				{	
+					$scope.progress = (loaded / total) * 100; 
+				});		
 		}
 
 		private setMidiInputsAndOutputs($scope: IPlayScope, midiWrapper: IMidiApiWrapper) {

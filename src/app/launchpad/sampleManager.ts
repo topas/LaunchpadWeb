@@ -75,9 +75,10 @@ module Launchpad {
 		}
 
 		private soundLoadedHandler(src: string) {
-						
-			this.forEachSample((sample: Sample) => {							
-				if (sample.src() != src) {
+				
+			this.forEachSample((sample: Sample) => {		
+
+				if (this.basePath + sample.src() != src) {
 					return;
 				}
 
@@ -86,8 +87,7 @@ module Launchpad {
 				this.samplesLoaded++;									
 				if (this.progressCallback != undefined) {
 					this.progressCallback(this.samplesCount, this.samplesLoaded);
-				}
-								
+				}				
 			});						
 		}
 

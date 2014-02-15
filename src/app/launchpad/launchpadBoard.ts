@@ -12,14 +12,14 @@ module Launchpad {
 
 			var soundJsWrapper = new SoundJsWrapper();			
 			var launchpadMidi = new LaunchpadMidi(midiWrapper);
-			var tempoSynchronizer = new TempoSynchronizer(140, timeoutService);
+			var metronome = new Metronome(140, timeoutService)
+			var tempoSynchronizer = new TempoSynchronizer(metronome);
 			var samplePlaySynchronizer = new SamplePlaySynchronizer();
 			var mgr = new SampleManager(soundJsWrapper, "./sounds/", tempoSynchronizer, samplePlaySynchronizer);
 			mgr.progressCallback = progressCallback;
 
 			mgr.add(0, 0, "skipyofficialmusic-drums1.wav", SampleType.Loop);
 			mgr.add(0, 1, "skyhunter-dubstep-dirty-wobble-bass.wav", SampleType.Loop);
-			
 
 			mgr.add(0, 3, "skipyofficialmusic-dark-dubstep-loop.wav", SampleType.Loop);
 			mgr.add(1, 3, "skipyofficialmusic-heavy-dubstep-sytnth.wav", SampleType.Loop);

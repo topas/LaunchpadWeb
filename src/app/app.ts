@@ -1,7 +1,7 @@
 var launchpadApp = angular.module('launchpadApp', ['$strap.directives']).
   config(['$routeProvider', function($routeProvider) {
   $routeProvider.
-      when('/play', {templateUrl: 'play.html'}).
+      when('/play', {templateUrl: 'play.html', controller: 'Launchpad.PlayCtrl'}).
       when('/about', {templateUrl: 'about.html'}).
       otherwise({redirectTo: '/play'});
 }]);

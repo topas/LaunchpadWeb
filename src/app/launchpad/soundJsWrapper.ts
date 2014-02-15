@@ -53,7 +53,7 @@ module Launchpad {
 	}
 
 	export class SoundJsWrapper implements ISoundJsWrapper {
-		private soundLoadedCallback: (src: string) => any;					
+		private soundLoadedCallback: (src: string) => any;		
 
 		setSoundLoadedCallback(callback: (src: string) => any) {
 			this.soundLoadedCallback = callback;
@@ -61,6 +61,9 @@ module Launchpad {
 
 		loadSounds(items: string[], basePath: string) {
 			
+			createjs.Sound.removeAllEventListeners();
+			createjs.Sound.registerPlugins([createjs.WebAudioPlugin, createjs.HTMLAudioPlugin]);
+			createjs.Sound.removeAllSounds();
 			createjs.Sound.addEventListener("fileload", createjs.proxy(this.fileLoaded, this));			
 			var manifest = [];
 			for(var i in items) {
@@ -68,7 +71,7 @@ module Launchpad {
 				manifest.push({ src: src, id: i, preload: true });			
 			}
 
-			createjs.Sound.registerManifest(manifest, basePath);
+			createjs.Sound.registerManifest(manifest, basePath);	
 		}	
 
 		createSoundInstance(src: string) : ISoundJsInstanceWrapper {
@@ -76,8 +79,12 @@ module Launchpad {
 		}
 
 		private fileLoaded(evt: any) {
+			this.soundLoaded(evt.src);	
+		}
+
+		private soundLoaded(src: string) {
 			if (this.soundLoadedCallback != undefined) {
-				this.soundLoadedCallback(evt.src);
+				this.soundLoadedCallback(src);
 			}
 		}
 	}

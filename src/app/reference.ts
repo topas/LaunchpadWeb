@@ -12,6 +12,7 @@
 /// <reference path="launchpad/emptySample.ts" />
 /// <reference path="launchpad/launchpadBoard.ts" />
 /// <reference path="launchpad/launchpadMidi.ts" />
+/// <reference path="launchpad/metronome.ts" />
 /// <reference path="launchpad/midiApiWrapper.ts" />
 /// <reference path="launchpad/sample.ts" />
 /// <reference path="launchpad/sampleColumn.ts" />
