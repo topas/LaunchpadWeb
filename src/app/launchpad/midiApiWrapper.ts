@@ -73,7 +73,7 @@ module Launchpad {
 		}
 
 		getInputNames(): string[] {	
-			return this.inputs.map(a => a.name);
+			return this.inputs.map(a => <string>a.name);
 		}
 
 		setInputByName(name: string) {
@@ -93,7 +93,7 @@ module Launchpad {
 		}
 
 		getOutputNames(): string[] {
-			return this.outputs.map(a => a.name);
+			return this.outputs.map(a => <string>a.name);
 		}
 
 		setOutputByName(name: string) { 	
