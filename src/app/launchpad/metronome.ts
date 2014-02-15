@@ -11,7 +11,7 @@ module Launchpad {
 		private oneBarDelay: number;
 		private timeoutService: ng.ITimeoutService;
 
-		ticked(): ILiteEvent<Button, ButtonState> { return this.onTicked; }
+		ticked(): ILiteEvent<IMetronome, any> { return this.onTicked; }
 
 		constructor(bpm: number, timeoutService: ng.ITimeoutService) {
 			this.oneBarDelay = this.getBarDelayByBpm(bpm);
