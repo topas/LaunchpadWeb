@@ -31,8 +31,7 @@ module Launchpad {
 
 		private getBarDelayByBpm(bpm: number): number {
 			var minute = 1000*60;
-			var barLength = 4;
-			return (minute / bpm) * barLength;
+			return (minute / bpm);
 		}
 	}
 } 

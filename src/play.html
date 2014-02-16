@@ -40,7 +40,10 @@
          <div class="row" ng-repeat="row in board.buttons.rows">
             <div ng-class="['col-md-1 col-sm-1 col-xs-1', button.state]" ng-repeat="button in row.buttons">
                 <button ng-class="['btn', button.state]" ng-click="button.click()">
-                    <span>&nbsp;</span>
+                    <div>&nbsp;</div>
+                    <div class="progressbar">
+                    <span ng-show="button.beatsProgress > 0" style="width:{{(button.beatsProgress/button.beatsCount)*100}}%"></span>
+                    </div>
                 </button>
             </div>
 

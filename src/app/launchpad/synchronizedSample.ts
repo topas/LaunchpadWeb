@@ -6,7 +6,7 @@ module Launchpad {
 		private tempoSynchronizer: ITempoSynchronizer;
 
 		constructor(sample: ISample, tempoSynchronizer: ITempoSynchronizer) {
-			super();
+			super(sample.progress);
 			this.sample = sample;
 			this.tempoSynchronizer = tempoSynchronizer;
 			this.sample.stateChanged().on((sample?: ISample, state?: SampleState) => this.internalSampleStateChanged(sample, state));

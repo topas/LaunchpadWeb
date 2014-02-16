@@ -47,7 +47,9 @@ module Launchpad {
 		}
 
 		private metronomeTicked() {
-			if (this.tickCount % 4 == 0) {
+			var barLength = 4;
+			var synchroLength = barLength * 4;
+			if (this.tickCount % synchroLength == 0) {
 				this.processSampleQueue();
 			}
 

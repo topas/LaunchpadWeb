@@ -7,6 +7,8 @@ module Launchpad {
 		
 		state: ButtonState;
 		location: ButtonLocation;
+		beatsProgress: number;
+		beatsCount: number;
 
 		stateChanged(): ILiteEvent<Button, ButtonState> { return this.onStateChanged; }
 
@@ -17,11 +19,19 @@ module Launchpad {
 			this.state = ButtonState.Disabled;
 			this.sample = sample;			
 
-			this.sample.stateChanged().on((sample?: ISample, state?: SampleState) => this.sampleStateChanged(state));			
+			this.sample.stateChanged().on((sample?: ISample, state?: SampleState) => this.sampleStateChanged(state));
+			if (this.sample.progress != null) {	
+				this.sample.progress.changed().on((progress?:SampleProgress) => this.sampleProgressChanged(progress));		
+			}
 		}
 
 		click(): void {			
 			this.sample.play();				
+		}
+
+		private sampleProgressChanged(progress: SampleProgress) {
+			this.beatsProgress = progress.progress;
+			this.beatsCount = progress.beatsCount;
 		}
 
 		private sampleStateChanged(state: SampleState) {

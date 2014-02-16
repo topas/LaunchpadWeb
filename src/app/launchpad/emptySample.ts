@@ -3,7 +3,7 @@ module Launchpad {
 	export class EmptySample extends SampleBase {
 		
 		constructor() {
-			super();
+			super(null);
 			this.setState(SampleState.None);
 		}
 

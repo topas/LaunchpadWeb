@@ -4,10 +4,10 @@ module Launchpad {
 		private instance: ISoundJsInstanceWrapper;
 		private sampleType: SampleType;
 		private srcPath: string;	
-		private volume: number;		
+		private volume: number;			
 
-		constructor(src: string, sampleType: SampleType) {
-			super();
+		constructor(src: string, sampleType: SampleType, progress: SampleProgress) {
+			super(progress);
 			this.srcPath = src;			
 			this.sampleType = sampleType;			
 		}

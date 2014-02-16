@@ -13,6 +13,20 @@ h1, h2, h3, h4, h5, h6, input, label {
 	margin-bottom: 10px;
 }
 
+button.btn {
+    padding: 3px;
+}
+
+button div.progressbar {
+    width: 30px;
+}
+
+button .progressbar>span {
+    display: block;
+    background-color: rgba(255, 255, 255, 0.5);
+    height: 3px;
+}
+
 button.Waiting {
 	animation-direction: normal;
     animation-duration: 0.25s;

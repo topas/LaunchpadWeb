@@ -4,6 +4,7 @@ module Launchpad {
 		state: SampleState;	
 		type(): SampleType;
 		stateChanged(): ILiteEvent<ISample, SampleState>;
+		progress: SampleProgress;
 
 		src(): string;
 		setSoundInstance(instance: ISoundJsInstanceWrapper);
@@ -15,11 +16,14 @@ module Launchpad {
 	export class SampleBase implements ISample {
 		private onStateChanged = new LiteEvent<ISample, SampleState>(); 
 
-		state: SampleState;				
+		state: SampleState;
+		progress: SampleProgress;
+
 		stateChanged(): ILiteEvent<ISample, SampleState> { return this.onStateChanged; }
 
-		constructor() {
+		constructor(progress: SampleProgress) {
 			this.state = SampleState.None;
+			this.progress = progress; 
 		}
 
 		type(): SampleType { throw "Abstract method"; }
